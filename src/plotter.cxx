@@ -263,7 +263,7 @@ int main () {
 
     dPad->cd (); 
     dPad->SetLogx ();
-    h = h_trk_z_pth_yield_ratio;
+    h = h_trk_g_pth_yield_ratio;
     h->SetLineColor (kBlack);
     h->SetMarkerColor (kBlack);
     h->GetXaxis ()->SetMoreLogLabels ();
