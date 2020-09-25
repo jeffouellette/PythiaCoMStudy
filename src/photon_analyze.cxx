@@ -91,15 +91,15 @@ int main (int argc, char** argv) {
 
   TH1D* h_g_pt_yield;
 
-  const float pthBins[13] = {1, 1.5, 2, 3, 4, 6, 8, 10, 15, 30, 60, 120, 240};
+  const float pthBins[11] = {1, 1.5, 2, 3, 4, 6, 8, 10, 15, 30, 60};
   const short nPthBins = sizeof (pthBins) / sizeof (pthBins[0]) - 1;
-  const float xhgBins[13] = {1./120., 1./60., 1./30., 1./15., 1./10., 1./8., 1./6., 1./4., 1./3., 1./2., 1./1.5, 1., 2.};
+  const float xhgBins[12] = {1./60., 1./30., 1./15., 1./10., 1./8., 1./6., 1./4., 1./3., 1./2., 1./1.5, 1., 2.};
   const short nXhGBins = sizeof (xhgBins) / sizeof (xhgBins[0]) - 1;
   const int nPtGBins = 60;
   const double* pTGBins = logspace (5, 300, nPtGBins);
 
-  float trk_counts[2][12] = {{}, {}};
-  float trk_counts_bkg[2][12] = {{}, {}};
+  float trk_counts[2][11] = {{}, {}};
+  float trk_counts_bkg[2][11] = {{}, {}};
 
   TFile* outFile = new TFile (outFileName.c_str (), "recreate");
 
@@ -121,7 +121,7 @@ int main (int argc, char** argv) {
   h2_trk_g_xhg_bkg_cov = new TH2D (Form ("h2_trk_g_xhg_bkg_cov_%s", name.c_str ()), ";#it{x}_{h#gamma};#it{x}_{h#gamma}", nXhGBins, xhgBins, nXhGBins, xhgBins);
   h2_trk_g_xhg_bkg_cov->Sumw2 ();
 
-  h_g_pt_yield = new TH1D (Form ("h_g_pt_yield_%s", name.c_str ()), ";#it{p}_{T}^{Z} [GeV]", nPtGBins, pTGBins);
+  h_g_pt_yield = new TH1D (Form ("h_g_pt_yield_%s", name.c_str ()), ";#it{p}_{T}^{#gamma} [GeV]", nPtGBins, pTGBins);
   h_g_pt_yield->Sumw2 ();
 
   for (int iEvent = 0; iEvent < nEvents; iEvent++) {
@@ -161,39 +161,25 @@ int main (int argc, char** argv) {
       const double xhg = trkpt / photon_pt;
 
       if (DeltaPhi (part_phi[iPart], photon_phi) >= 3*pi/4) {
-        if (trkpt < pthBins[nPthBins]) {
-          for (short i = nPthBins-1; i >= 0; i++) {
-            if (pthBins[i] <= trkpt) {
-              trk_counts[0][i] += 1.;
-              break;
-            } 
-          }
+        for (short i = 0; i < nPthBins-1; i++) {
+          if (pthBins[i] <= trkpt && trkpt < pthBins[i+1])
+            trk_counts_bkg[0][i] += 1.;
         }
-        if (xhg < xhgBins[nXhGBins]) {
-          for (short i = nXhGBins-1; i >= 0; i++) {
-            if (xhgBins[i] <= xhg) {
-              trk_counts[1][i] += 1.;
-              break;
-            } 
-          }
+        
+        for (short i = 0; i < nXhGBins-1; i++) {
+          if (xhgBins[i] <= xhg && xhg < xhgBins[i+1])
+            trk_counts_bkg[1][i] += 1.;
         }
       }
       else if (DeltaPhi (part_phi[iPart], photon_phi_transmin) < pi/8.) {
-        if (trkpt < pthBins[nPthBins]) {
-          for (short i = nPthBins-1; i >= 0; i++) {
-            if (pthBins[i] <= trkpt) {
-              trk_counts_bkg[0][i] += 1.;
-              break;
-            } 
-          }
+        for (short i = 0; i < nPthBins-1; i++) {
+          if (pthBins[i] <= trkpt && trkpt < pthBins[i+1])
+            trk_counts_bkg[0][i] += 1.;
         }
-        if (xhg < xhgBins[nXhGBins]) {
-          for (short i = nXhGBins-1; i >= 0; i++) {
-            if (xhgBins[i] <= xhg) {
-              trk_counts_bkg[1][i] += 1.;
-              break;
-            } 
-          }
+        
+        for (short i = 0; i < nXhGBins-1; i++) {
+          if (xhgBins[i] <= xhg && xhg < xhgBins[i+1])
+            trk_counts_bkg[1][i] += 1.;
         }
       }
 
@@ -226,7 +212,7 @@ int main (int argc, char** argv) {
       }
     }
 
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 11; i++) {
       trk_counts[0][i] = 0;
       trk_counts[1][i] = 0;
       trk_counts_bkg[0][i] = 0;

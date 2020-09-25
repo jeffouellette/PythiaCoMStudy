@@ -93,15 +93,15 @@ int main (int argc, char** argv) {
 
   TH1D* h_z_pt_yield;
 
-  const float pthBins[13] = {1, 1.5, 2, 3, 4, 6, 8, 10, 15, 30, 60, 120, 240};
+  const float pthBins[11] = {1, 1.5, 2, 3, 4, 6, 8, 10, 15, 30, 60};
   const short nPthBins = sizeof (pthBins) / sizeof (pthBins[0]) - 1;
-  const float xhzBins[13] = {1./120., 1./60., 1./30., 1./15., 1./10., 1./8., 1./6., 1./4., 1./3., 1./2., 1./1.5, 1., 2.};
+  const float xhzBins[12] = {1./60., 1./30., 1./15., 1./10., 1./8., 1./6., 1./4., 1./3., 1./2., 1./1.5, 1., 2.};
   const short nXhZBins = sizeof (xhzBins) / sizeof (xhzBins[0]) - 1;
   const int nPtZBins = 60;
   const double* pTZBins = logspace (5, 300, nPtZBins);
 
-  float trk_counts[2][12] = {{}, {}};
-  float trk_counts_bkg[2][12] = {{}, {}};
+  float trk_counts[2][11] = {{}, {}};
+  float trk_counts_bkg[2][11] = {{}, {}};
 
   TFile* outFile = new TFile (outFileName.c_str (), "recreate");
 
@@ -214,7 +214,7 @@ int main (int argc, char** argv) {
       }
     }
 
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 11; i++) {
       trk_counts[0][i] = 0;
       trk_counts[1][i] = 0;
       trk_counts_bkg[0][i] = 0;

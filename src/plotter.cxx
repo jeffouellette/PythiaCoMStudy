@@ -128,6 +128,8 @@ int main () {
     TH1D* h = nullptr; 
 
     uPad->cd (); 
+    uPad->SetLogx ();
+    uPad->SetLogy ();
     h = h_trk_z_pth_yield[0];
     h->SetLineColor (kBlue);
     h->SetLineWidth (2);
@@ -150,6 +152,7 @@ int main () {
     h->Draw ("hist same");
 
     dPad->cd (); 
+    dPad->SetLogx ();
     h = h_trk_z_pth_yield_ratio;
     h->SetLineColor (kBlack);
     h->SetMarkerColor (kBlack);
