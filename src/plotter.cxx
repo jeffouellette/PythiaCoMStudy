@@ -171,7 +171,7 @@ int main () {
     uPad->SetLogx ();
     uPad->SetLogy ();
     h = h_trk_z_pth_yield[0];
-    h->SetLineColor (kBlue);
+    h->SetLineColor (kAzure-2);
     h->SetLineWidth (2);
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.6);
@@ -183,13 +183,16 @@ int main () {
     h->GetYaxis ()->SetTitleOffset (1.5*0.6);
 
     h->Draw ("hist");
-    
 
     h = h_trk_z_pth_yield[1];
-    h->SetLineColor (kRed);
+    h->SetLineColor (kRed+1);
     h->SetLineWidth (2);
 
     h->Draw ("hist same");
+
+    myText (0.65, 0.80, kBlack, "#it{p}_{T}^{Z} > 5 GeV", 0.04/6);
+    myText (0.65, 0.74, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
+    myText (0.65, 0.68, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
 
     dPad->cd (); 
     dPad->SetLogx ();
@@ -202,7 +205,7 @@ int main () {
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
     h->GetXaxis ()->SetLabelSize (0.04/0.4);
     h->GetXaxis ()->SetTitleOffset (1.5*0.4);
-    h->GetYaxis ()->SetTitle ("8.16 TeV / 5.02 TeV");
+    h->GetYaxis ()->SetTitle ("8.16 / 5.02");
     h->GetYaxis ()->SetTitleSize (0.04/0.4);
     h->GetYaxis ()->SetLabelSize (0.04/0.4);
     h->GetYaxis ()->SetTitleOffset (1.5*0.4);
@@ -214,8 +217,9 @@ int main () {
 
 
 
+
   {
-    const char* canvasName = "c_trk_z_pth_yield";
+    const char* canvasName = "c_trk_g_pth_yield";
     TCanvas* c = new TCanvas (canvasName, "", 800, 800);
     TPad* uPad = new TPad (Form ("%s_uPad", canvasName), "", 0.0, 0.4, 1.0, 1.0);
     TPad* dPad = new TPad (Form ("%s_dPad", canvasName), "", 0.0, 0.0, 1.0, 0.4);
@@ -231,8 +235,8 @@ int main () {
     uPad->cd (); 
     uPad->SetLogx ();
     uPad->SetLogy ();
-    h = h_trk_z_pth_yield[0];
-    h->SetLineColor (kBlue);
+    h = h_trk_g_pth_yield[0];
+    h->SetLineColor (kAzure-2);
     h->SetLineWidth (2);
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.6);
@@ -244,13 +248,16 @@ int main () {
     h->GetYaxis ()->SetTitleOffset (1.5*0.6);
 
     h->Draw ("hist");
-    
 
-    h = h_trk_z_pth_yield[1];
-    h->SetLineColor (kRed);
+    h = h_trk_g_pth_yield[1];
+    h->SetLineColor (kRed+1);
     h->SetLineWidth (2);
 
     h->Draw ("hist same");
+
+    myText (0.65, 0.80, kBlack, "#it{p}_{T}^{#gamma} > 50 GeV", 0.04/6);
+    myText (0.65, 0.74, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
+    myText (0.65, 0.68, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
 
     dPad->cd (); 
     dPad->SetLogx ();
@@ -263,7 +270,7 @@ int main () {
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
     h->GetXaxis ()->SetLabelSize (0.04/0.4);
     h->GetXaxis ()->SetTitleOffset (1.5*0.4);
-    h->GetYaxis ()->SetTitle ("8.16 TeV / 5.02 TeV");
+    h->GetYaxis ()->SetTitle ("8.16 / 5.02");
     h->GetYaxis ()->SetTitleSize (0.04/0.4);
     h->GetYaxis ()->SetLabelSize (0.04/0.4);
     h->GetYaxis ()->SetTitleOffset (1.5*0.4);
@@ -272,6 +279,7 @@ int main () {
 
     c->SaveAs ("Plots/Ztagged_ptch_yields_comparison.pdf"); 
   }
+
   
 
   return 0;
