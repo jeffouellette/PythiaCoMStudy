@@ -207,7 +207,7 @@ int main () {
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
     h->GetXaxis ()->SetLabelSize (0.04/0.4);
-    h->GetXaxis ()->SetTitleOffset (2.5*0.4);
+    h->GetXaxis ()->SetTitleOffset (3.0*0.4);
     h->GetYaxis ()->SetTitle ("8.16 / 5.02");
     h->GetYaxis ()->SetTitleSize (0.04/0.4);
     h->GetYaxis ()->SetLabelSize (0.04/0.4);
@@ -275,7 +275,7 @@ int main () {
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
     h->GetXaxis ()->SetLabelSize (0.04/0.4);
-    h->GetXaxis ()->SetTitleOffset (2.5*0.4);
+    h->GetXaxis ()->SetTitleOffset (3.0*0.4);
     h->GetYaxis ()->SetTitle ("8.16 / 5.02");
     h->GetYaxis ()->SetTitleSize (0.04/0.4);
     h->GetYaxis ()->SetLabelSize (0.04/0.4);
@@ -342,7 +342,7 @@ int main () {
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{Z} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
     h->GetXaxis ()->SetLabelSize (0.04/0.4);
-    h->GetXaxis ()->SetTitleOffset (2.5*0.4);
+    h->GetXaxis ()->SetTitleOffset (3.0*0.4);
     h->GetYaxis ()->SetTitle ("8.16 / 5.02");
     h->GetYaxis ()->SetTitleSize (0.04/0.4);
     h->GetYaxis ()->SetLabelSize (0.04/0.4);
@@ -409,7 +409,7 @@ int main () {
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{#gamma} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
     h->GetXaxis ()->SetLabelSize (0.04/0.4);
-    h->GetXaxis ()->SetTitleOffset (2.5*0.4);
+    h->GetXaxis ()->SetTitleOffset (3.0*0.4);
     h->GetYaxis ()->SetTitle ("8.16 / 5.02");
     h->GetYaxis ()->SetTitleSize (0.04/0.4);
     h->GetYaxis ()->SetLabelSize (0.04/0.4);
