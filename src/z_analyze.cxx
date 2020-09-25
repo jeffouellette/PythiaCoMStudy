@@ -163,39 +163,25 @@ int main (int argc, char** argv) {
       const double xhz = trkpt / z_pt;
 
       if (DeltaPhi (part_phi[iPart], z_phi) >= 3*pi/4) {
-        if (trkpt < pthBins[nPthBins]) {
-          for (short i = nPthBins-1; i >= 0; i++) {
-            if (pthBins[i] <= trkpt) {
-              trk_counts[0][i] += 1.;
-              break;
-            } 
-          }
+        for (short i = 0; i < nPthBins-1; i++) {
+          if (pthBins[i] <= trkpt && trkpt < pthBins[i+1])
+            trk_counts[0][i] += 1.;
         }
-        if (xhz < xhzBins[nXhZBins]) {
-          for (short i = nXhZBins-1; i >= 0; i++) {
-            if (xhzBins[i] <= xhz) {
-              trk_counts[1][i] += 1.;
-              break;
-            } 
-          }
+        
+        for (short i = 0; i < nXhZBins-1; i++) {
+          if (xhzBins[i] <= xhz && xhz < xhzBins[i+1])
+            trk_counts[1][i] += 1.;
         }
       }
       else if (DeltaPhi (part_phi[iPart], z_phi_transmin) < pi/8.) {
-        if (trkpt < pthBins[nPthBins]) {
-          for (short i = nPthBins-1; i >= 0; i++) {
-            if (pthBins[i] <= trkpt) {
-              trk_counts_bkg[0][i] += 1.;
-              break;
-            } 
-          }
+        for (short i = 0; i < nPthBins-1; i++) {
+          if (pthBins[i] <= trkpt && trkpt < pthBins[i+1])
+            trk_counts_bkg[0][i] += 1.;
         }
-        if (xhz < xhzBins[nXhZBins]) {
-          for (short i = nXhZBins-1; i >= 0; i++) {
-            if (xhzBins[i] <= xhz) {
-              trk_counts_bkg[1][i] += 1.;
-              break;
-            } 
-          }
+        
+        for (short i = 0; i < nXhZBins-1; i++) {
+          if (xhzBins[i] <= xhz && xhz < xhzBins[i+1])
+            trk_counts_bkg[1][i] += 1.;
         }
       }
 
