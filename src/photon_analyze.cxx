@@ -163,12 +163,12 @@ int main (int argc, char** argv) {
       if (DeltaPhi (part_phi[iPart], photon_phi) >= 3*pi/4) {
         for (short i = 0; i < nPthBins-1; i++) {
           if (pthBins[i] <= trkpt && trkpt < pthBins[i+1])
-            trk_counts_bkg[0][i] += 1.;
+            trk_counts[0][i] += 1.;
         }
         
         for (short i = 0; i < nXhGBins-1; i++) {
           if (xhgBins[i] <= xhg && xhg < xhgBins[i+1])
-            trk_counts_bkg[1][i] += 1.;
+            trk_counts[1][i] += 1.;
         }
       }
       else if (DeltaPhi (part_phi[iPart], photon_phi_transmin) < pi/8.) {
