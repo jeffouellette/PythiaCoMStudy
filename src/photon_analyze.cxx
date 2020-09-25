@@ -95,8 +95,8 @@ int main (int argc, char** argv) {
   const short nPthBins = sizeof (pthBins) / sizeof (pthBins[0]) - 1;
   const float xhgBins[12] = {1./60., 1./30., 1./15., 1./10., 1./8., 1./6., 1./4., 1./3., 1./2., 1./1.5, 1., 2.};
   const short nXhGBins = sizeof (xhgBins) / sizeof (xhgBins[0]) - 1;
-  const int nPtGBins = 60;
-  const double* pTGBins = logspace (5, 300, nPtGBins);
+  const int nPtGBins = 30;
+  const double* pTGBins = logspace (50, 300, nPtGBins);
 
   float trk_counts[2][11] = {{}, {}};
   float trk_counts_bkg[2][11] = {{}, {}};
@@ -264,6 +264,8 @@ int main (int argc, char** argv) {
 
     h2_trk_g_pth_bkg_cov->Scale (1./(nEvents * (nEvents - 1)));
     h2_trk_g_xhg_bkg_cov->Scale (1./(nEvents * (nEvents - 1)));
+
+    h_g_pt_yield->Scale (1./nEvents, "width");
   }
 
 

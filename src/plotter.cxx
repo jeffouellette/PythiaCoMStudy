@@ -191,15 +191,16 @@ int main () {
     h->Draw ("hist same");
 
     myText (0.65, 0.80, kBlack, "#it{p}_{T}^{Z} > 5 GeV", 0.04/0.6);
-    myText (0.65, 0.74, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
-    myText (0.65, 0.68, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
+    myText (0.65, 0.71, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
+    myText (0.65, 0.62, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
 
     dPad->cd (); 
     dPad->SetLogx ();
     h = h_trk_z_pth_yield_ratio;
     h->SetLineColor (kBlack);
     h->SetMarkerColor (kBlack);
-    h->GetYaxis ()->SetRangeUser (0.7, 1.3);
+    h->GetXaxis ()->SetMoreLogLabels ();
+    h->GetYaxis ()->SetRangeUser (0.74, 1.26);
 
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
@@ -257,15 +258,16 @@ int main () {
     h->Draw ("hist same");
 
     myText (0.65, 0.80, kBlack, "#it{p}_{T}^{#gamma} > 50 GeV", 0.04/0.6);
-    myText (0.65, 0.74, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
-    myText (0.65, 0.68, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
+    myText (0.65, 0.71, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
+    myText (0.65, 0.62, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
 
     dPad->cd (); 
     dPad->SetLogx ();
     h = h_trk_z_pth_yield_ratio;
     h->SetLineColor (kBlack);
     h->SetMarkerColor (kBlack);
-    h->GetYaxis ()->SetRangeUser (0.7, 1.3);
+    h->GetXaxis ()->SetMoreLogLabels ();
+    h->GetYaxis ()->SetRangeUser (0.74, 1.26);
 
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
@@ -280,6 +282,140 @@ int main () {
     h->Draw ("e1");
 
     c->SaveAs ("Plots/Photontagged_ptch_yields_comparison.pdf"); 
+  }
+
+
+
+
+  {
+    const char* canvasName = "c_z_pt_yield";
+    TCanvas* c = new TCanvas (canvasName, "", 800, 800);
+    TPad* uPad = new TPad (Form ("%s_uPad", canvasName), "", 0.0, 0.4, 1.0, 1.0);
+    TPad* dPad = new TPad (Form ("%s_dPad", canvasName), "", 0.0, 0.0, 1.0, 0.4);
+
+    uPad->SetBottomMargin (0);
+    dPad->SetTopMargin (0);
+    dPad->SetBottomMargin (0.25);
+    uPad->Draw ();
+    dPad->Draw ();
+
+    TH1D* h = nullptr; 
+
+    uPad->cd (); 
+    uPad->SetLogx ();
+    uPad->SetLogy ();
+    h = h_z_pt_yield[0];
+    h->SetLineColor (kAzure-2);
+    h->SetLineWidth (2);
+    h->GetXaxis ()->SetTitle ("#it{p}_{T}^{Z} [GeV]");
+    h->GetXaxis ()->SetTitleSize (0.04/0.6);
+    h->GetXaxis ()->SetLabelSize (0.04/0.6);
+    h->GetXaxis ()->SetTitleOffset (1.5*0.6);
+    h->GetYaxis ()->SetTitle ("dN_{Z} / d#it{p}_{T} [GeV^{-1}]");
+    h->GetYaxis ()->SetTitleSize (0.04/0.6);
+    h->GetYaxis ()->SetLabelSize (0.04/0.6);
+    h->GetYaxis ()->SetTitleOffset (1.5*0.6);
+
+    h->Draw ("hist");
+
+    h = h_z_pt_yield[1];
+    h->SetLineColor (kRed+1);
+    h->SetLineWidth (2);
+
+    h->Draw ("hist same");
+
+    myText (0.65, 0.80, kBlack, "#it{p}_{T}^{Z} > 5 GeV", 0.04/0.6);
+    myText (0.65, 0.71, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
+    myText (0.65, 0.62, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
+
+    dPad->cd (); 
+    dPad->SetLogx ();
+    h = h_z_pt_yield_ratio;
+    h->SetLineColor (kBlack);
+    h->SetMarkerColor (kBlack);
+    h->GetXaxis ()->SetMoreLogLabels ();
+    h->GetYaxis ()->SetRangeUser (0.74, 1.26);
+
+    h->GetXaxis ()->SetTitle ("#it{p}_{T}^{Z} [GeV]");
+    h->GetXaxis ()->SetTitleSize (0.04/0.4);
+    h->GetXaxis ()->SetLabelSize (0.04/0.4);
+    h->GetXaxis ()->SetTitleOffset (1.5*0.4);
+    h->GetYaxis ()->SetTitle ("8.16 / 5.02");
+    h->GetYaxis ()->SetTitleSize (0.04/0.4);
+    h->GetYaxis ()->SetLabelSize (0.04/0.4);
+    h->GetYaxis ()->SetTitleOffset (1.5*0.4);
+    h->GetYaxis ()->CenterTitle ();
+
+    h->Draw ("e1");
+
+    c->SaveAs ("Plots/Z_pt_yields_comparison.pdf"); 
+  }
+
+
+
+
+  {
+    const char* canvasName = "c_g_pt_yield";
+    TCanvas* c = new TCanvas (canvasName, "", 800, 800);
+    TPad* uPad = new TPad (Form ("%s_uPad", canvasName), "", 0.0, 0.4, 1.0, 1.0);
+    TPad* dPad = new TPad (Form ("%s_dPad", canvasName), "", 0.0, 0.0, 1.0, 0.4);
+
+    uPad->SetBottomMargin (0);
+    dPad->SetTopMargin (0);
+    dPad->SetBottomMargin (0.25);
+    uPad->Draw ();
+    dPad->Draw ();
+
+    TH1D* h = nullptr; 
+
+    uPad->cd (); 
+    uPad->SetLogx ();
+    uPad->SetLogy ();
+    h = h_g_pt_yield[0];
+    h->SetLineColor (kAzure-2);
+    h->SetLineWidth (2);
+    h->GetXaxis ()->SetTitle ("#it{p}_{T}^{#gamma} [GeV]");
+    h->GetXaxis ()->SetTitleSize (0.04/0.6);
+    h->GetXaxis ()->SetLabelSize (0.04/0.6);
+    h->GetXaxis ()->SetTitleOffset (1.5*0.6);
+    h->GetYaxis ()->SetTitle ("dN_{#gamma} / d#it{p}_{T} [GeV^{-1}]");
+    h->GetYaxis ()->SetTitleSize (0.04/0.6);
+    h->GetYaxis ()->SetLabelSize (0.04/0.6);
+    h->GetYaxis ()->SetTitleOffset (1.5*0.6);
+
+    h->Draw ("hist");
+
+    h = h_g_pt_yield[1];
+    h->SetLineColor (kRed+1);
+    h->SetLineWidth (2);
+
+    h->Draw ("hist same");
+
+    myText (0.65, 0.80, kBlack, "#it{p}_{T}^{#gamma} > 5 GeV", 0.04/0.6);
+    myText (0.65, 0.71, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
+    myText (0.65, 0.62, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
+
+    dPad->cd (); 
+    dPad->SetLogx ();
+    h = h_g_pt_yield_ratio;
+    h->SetLineColor (kBlack);
+    h->SetMarkerColor (kBlack);
+    h->GetXaxis ()->SetMoreLogLabels ();
+    h->GetYaxis ()->SetRangeUser (0.74, 1.26);
+
+    h->GetXaxis ()->SetTitle ("#it{p}_{T}^{#gamma} [GeV]");
+    h->GetXaxis ()->SetTitleSize (0.04/0.4);
+    h->GetXaxis ()->SetLabelSize (0.04/0.4);
+    h->GetXaxis ()->SetTitleOffset (1.5*0.4);
+    h->GetYaxis ()->SetTitle ("8.16 / 5.02");
+    h->GetYaxis ()->SetTitleSize (0.04/0.4);
+    h->GetYaxis ()->SetLabelSize (0.04/0.4);
+    h->GetYaxis ()->SetTitleOffset (1.5*0.4);
+    h->GetYaxis ()->CenterTitle ();
+
+    h->Draw ("e1");
+
+    c->SaveAs ("Plots/Photon_pt_yields_comparison.pdf"); 
   }
 
   
