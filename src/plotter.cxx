@@ -190,7 +190,7 @@ int main () {
 
     h->Draw ("hist same");
 
-    myText (0.65, 0.80, kBlack, "#it{p}_{T}^{Z} > 5 GeV", 0.04/6);
+    myText (0.65, 0.80, kBlack, "#it{p}_{T}^{Z} > 5 GeV", 0.04/0.6);
     myText (0.65, 0.74, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
     myText (0.65, 0.68, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
 
@@ -199,7 +199,7 @@ int main () {
     h = h_trk_z_pth_yield_ratio;
     h->SetLineColor (kBlack);
     h->SetMarkerColor (kBlack);
-    h->GetYaxis ()->SetRangeUser (0, 2.0);
+    h->GetYaxis ()->SetRangeUser (0.7, 1.3);
 
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
@@ -209,6 +209,7 @@ int main () {
     h->GetYaxis ()->SetTitleSize (0.04/0.4);
     h->GetYaxis ()->SetLabelSize (0.04/0.4);
     h->GetYaxis ()->SetTitleOffset (1.5*0.4);
+    h->GetYaxis ()->CenterTitle ();
 
     h->Draw ("e1");
 
@@ -255,7 +256,7 @@ int main () {
 
     h->Draw ("hist same");
 
-    myText (0.65, 0.80, kBlack, "#it{p}_{T}^{#gamma} > 50 GeV", 0.04/6);
+    myText (0.65, 0.80, kBlack, "#it{p}_{T}^{#gamma} > 50 GeV", 0.04/0.6);
     myText (0.65, 0.74, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
     myText (0.65, 0.68, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
 
@@ -264,7 +265,7 @@ int main () {
     h = h_trk_z_pth_yield_ratio;
     h->SetLineColor (kBlack);
     h->SetMarkerColor (kBlack);
-    h->GetYaxis ()->SetRangeUser (0, 2.0);
+    h->GetYaxis ()->SetRangeUser (0.7, 1.3);
 
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
@@ -274,10 +275,11 @@ int main () {
     h->GetYaxis ()->SetTitleSize (0.04/0.4);
     h->GetYaxis ()->SetLabelSize (0.04/0.4);
     h->GetYaxis ()->SetTitleOffset (1.5*0.4);
+    h->GetYaxis ()->CenterTitle ();
 
     h->Draw ("e1");
 
-    c->SaveAs ("Plots/Ztagged_ptch_yields_comparison.pdf"); 
+    c->SaveAs ("Plots/Photontagged_ptch_yields_comparison.pdf"); 
   }
 
   
