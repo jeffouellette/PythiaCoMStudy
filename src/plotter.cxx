@@ -2,6 +2,7 @@
 #include <TH1D.h>
 #include <TH2D.h>
 #include <TF1.h>
+#include <TGraphAsymmErrors.h>
 #include <TLine.h>
 #include <TCanvas.h>
 #include <TProfile.h>
@@ -25,26 +26,28 @@
 
 using namespace PythiaCoMStudy;
 
+typedef TGraphAsymmErrors TGAE;
+
 TH1D* h_trk_z_pth_yield[2];
 TH1D* h_trk_z_pth_bkg_yield[2];
 TH1D* h_trk_z_pth_yield_ratio;
-TH1D* h_trk_z_xhz_yield[2];
-TH1D* h_trk_z_xhz_bkg_yield[2];
-TH1D* h_trk_z_xhz_yield_ratio;
+//TH1D* h_trk_z_xhz_yield[2];
+//TH1D* h_trk_z_xhz_bkg_yield[2];
+//TH1D* h_trk_z_xhz_yield_ratio;
 TH2D* h2_trk_z_pth_cov[2];
 TH2D* h2_trk_z_pth_bkg_cov[2];
-TH2D* h2_trk_z_xhz_cov[2];
-TH2D* h2_trk_z_xhz_bkg_cov[2];
+//TH2D* h2_trk_z_xhz_cov[2];
+//TH2D* h2_trk_z_xhz_bkg_cov[2];
 TH1D* h_trk_g_pth_yield[2];
 TH1D* h_trk_g_pth_bkg_yield[2];
 TH1D* h_trk_g_pth_yield_ratio;
-TH1D* h_trk_g_xhg_yield[2];
-TH1D* h_trk_g_xhg_bkg_yield[2];
-TH1D* h_trk_g_xhg_yield_ratio;
+//TH1D* h_trk_g_xhg_yield[2];
+//TH1D* h_trk_g_xhg_bkg_yield[2];
+//TH1D* h_trk_g_xhg_yield_ratio;
 TH2D* h2_trk_g_pth_cov[2];
 TH2D* h2_trk_g_pth_bkg_cov[2];
-TH2D* h2_trk_g_xhg_cov[2];
-TH2D* h2_trk_g_xhg_bkg_cov[2];
+//TH2D* h2_trk_g_xhg_cov[2];
+//TH2D* h2_trk_g_xhg_bkg_cov[2];
 
 TH1D* h_z_pt_yield[2];
 TH1D* h_z_pt_yield_ratio;
@@ -65,43 +68,43 @@ void SetVariances (TH1D* h, TH2D* h2) {
 
 int main () {
 
-  SetAtlasStyle();
+  SetAtlasStyle(); 
 
   TFile* inFile = nullptr;
   inFile = new TFile ("rootFiles/z_out_sqrts5020GeV.root", "read");
 
   h_trk_z_pth_yield[0] = (TH1D*) inFile->Get ("h_trk_z_pth_yield_sqrts5020GeV");
   h_trk_z_pth_bkg_yield[0] = (TH1D*) inFile->Get ("h_trk_z_pth_bkg_yield_sqrts5020GeV");
-  h_trk_z_xhz_yield[0] = (TH1D*) inFile->Get ("h_trk_z_xhz_yield_sqrts5020GeV");
-  h_trk_z_xhz_bkg_yield[0] = (TH1D*) inFile->Get ("h_trk_z_xhz_bkg_yield_sqrts5020GeV");
+  //h_trk_z_xhz_yield[0] = (TH1D*) inFile->Get ("h_trk_z_xhz_yield_sqrts5020GeV");
+  //h_trk_z_xhz_bkg_yield[0] = (TH1D*) inFile->Get ("h_trk_z_xhz_bkg_yield_sqrts5020GeV");
   h2_trk_z_pth_cov[0] = (TH2D*) inFile->Get ("h2_trk_z_pth_cov_sqrts5020GeV");
   h2_trk_z_pth_bkg_cov[0] = (TH2D*) inFile->Get ("h2_trk_z_pth_bkg_cov_sqrts5020GeV");
-  h2_trk_z_xhz_cov[0] = (TH2D*) inFile->Get ("h2_trk_z_xhz_cov_sqrts5020GeV");
-  h2_trk_z_xhz_bkg_cov[0] = (TH2D*) inFile->Get ("h2_trk_z_xhz_bkg_cov_sqrts5020GeV");
+  //h2_trk_z_xhz_cov[0] = (TH2D*) inFile->Get ("h2_trk_z_xhz_cov_sqrts5020GeV");
+  //h2_trk_z_xhz_bkg_cov[0] = (TH2D*) inFile->Get ("h2_trk_z_xhz_bkg_cov_sqrts5020GeV");
   SetVariances (h_trk_z_pth_yield[0], h2_trk_z_pth_cov[0]);
   SetVariances (h_trk_z_pth_bkg_yield[0], h2_trk_z_pth_bkg_cov[0]);
-  SetVariances (h_trk_z_xhz_yield[0], h2_trk_z_xhz_cov[0]);
-  SetVariances (h_trk_z_xhz_bkg_yield[0], h2_trk_z_xhz_bkg_cov[0]);
+  //SetVariances (h_trk_z_xhz_yield[0], h2_trk_z_xhz_cov[0]);
+  //SetVariances (h_trk_z_xhz_bkg_yield[0], h2_trk_z_xhz_bkg_cov[0]);
   h_trk_z_pth_yield[0]->Add (h_trk_z_pth_bkg_yield[0], -1);
-  h_trk_z_xhz_yield[0]->Add (h_trk_z_xhz_bkg_yield[0], -1);
+  //h_trk_z_xhz_yield[0]->Add (h_trk_z_xhz_bkg_yield[0], -1);
   h_z_pt_yield[0] = (TH1D*) inFile->Get ("h_z_pt_yield_sqrts5020GeV");
 
   inFile = new TFile ("rootFiles/z_out_sqrts8160GeV.root", "read");
 
   h_trk_z_pth_yield[1] = (TH1D*) inFile->Get ("h_trk_z_pth_yield_sqrts8160GeV");
   h_trk_z_pth_bkg_yield[1] = (TH1D*) inFile->Get ("h_trk_z_pth_bkg_yield_sqrts8160GeV");
-  h_trk_z_xhz_yield[1] = (TH1D*) inFile->Get ("h_trk_z_xhz_yield_sqrts8160GeV");
-  h_trk_z_xhz_bkg_yield[1] = (TH1D*) inFile->Get ("h_trk_z_xhz_bkg_yield_sqrts8160GeV");
+  //h_trk_z_xhz_yield[1] = (TH1D*) inFile->Get ("h_trk_z_xhz_yield_sqrts8160GeV");
+  //h_trk_z_xhz_bkg_yield[1] = (TH1D*) inFile->Get ("h_trk_z_xhz_bkg_yield_sqrts8160GeV");
   h2_trk_z_pth_cov[1] = (TH2D*) inFile->Get ("h2_trk_z_pth_cov_sqrts8160GeV");
   h2_trk_z_pth_bkg_cov[1] = (TH2D*) inFile->Get ("h2_trk_z_pth_bkg_cov_sqrts8160GeV");
-  h2_trk_z_xhz_cov[1] = (TH2D*) inFile->Get ("h2_trk_z_xhz_cov_sqrts8160GeV");
-  h2_trk_z_xhz_bkg_cov[1] = (TH2D*) inFile->Get ("h2_trk_z_xhz_bkg_cov_sqrts8160GeV");
+  //h2_trk_z_xhz_cov[1] = (TH2D*) inFile->Get ("h2_trk_z_xhz_cov_sqrts8160GeV");
+  //h2_trk_z_xhz_bkg_cov[1] = (TH2D*) inFile->Get ("h2_trk_z_xhz_bkg_cov_sqrts8160GeV");
   SetVariances (h_trk_z_pth_yield[1], h2_trk_z_pth_cov[1]);
   SetVariances (h_trk_z_pth_bkg_yield[1], h2_trk_z_pth_bkg_cov[1]);
-  SetVariances (h_trk_z_xhz_yield[1], h2_trk_z_xhz_cov[1]);
-  SetVariances (h_trk_z_xhz_bkg_yield[1], h2_trk_z_xhz_bkg_cov[1]);
+  //SetVariances (h_trk_z_xhz_yield[1], h2_trk_z_xhz_cov[1]);
+  //SetVariances (h_trk_z_xhz_bkg_yield[1], h2_trk_z_xhz_bkg_cov[1]);
   h_trk_z_pth_yield[1]->Add (h_trk_z_pth_bkg_yield[1], -1);
-  h_trk_z_xhz_yield[1]->Add (h_trk_z_xhz_bkg_yield[1], -1);
+  //h_trk_z_xhz_yield[1]->Add (h_trk_z_xhz_bkg_yield[1], -1);
   h_z_pt_yield[1] = (TH1D*) inFile->Get ("h_z_pt_yield_sqrts8160GeV");
 
   h_trk_z_pth_yield_ratio = (TH1D*) h_trk_z_pth_yield[1]->Clone ("h_trk_z_pth_yield_ratio");
@@ -114,36 +117,36 @@ int main () {
 
   h_trk_g_pth_yield[0] = (TH1D*) inFile->Get ("h_trk_g_pth_yield_sqrts5020GeV");
   h_trk_g_pth_bkg_yield[0] = (TH1D*) inFile->Get ("h_trk_g_pth_bkg_yield_sqrts5020GeV");
-  h_trk_g_xhg_yield[0] = (TH1D*) inFile->Get ("h_trk_g_xhg_yield_sqrts5020GeV");
-  h_trk_g_xhg_bkg_yield[0] = (TH1D*) inFile->Get ("h_trk_g_xhg_bkg_yield_sqrts5020GeV");
+  //h_trk_g_xhg_yield[0] = (TH1D*) inFile->Get ("h_trk_g_xhg_yield_sqrts5020GeV");
+  //h_trk_g_xhg_bkg_yield[0] = (TH1D*) inFile->Get ("h_trk_g_xhg_bkg_yield_sqrts5020GeV");
   h2_trk_g_pth_cov[0] = (TH2D*) inFile->Get ("h2_trk_g_pth_cov_sqrts5020GeV");
   h2_trk_g_pth_bkg_cov[0] = (TH2D*) inFile->Get ("h2_trk_g_pth_bkg_cov_sqrts5020GeV");
-  h2_trk_g_xhg_cov[0] = (TH2D*) inFile->Get ("h2_trk_g_xhg_cov_sqrts5020GeV");
-  h2_trk_g_xhg_bkg_cov[0] = (TH2D*) inFile->Get ("h2_trk_g_xhg_bkg_cov_sqrts5020GeV");
+  //h2_trk_g_xhg_cov[0] = (TH2D*) inFile->Get ("h2_trk_g_xhg_cov_sqrts5020GeV");
+  //h2_trk_g_xhg_bkg_cov[0] = (TH2D*) inFile->Get ("h2_trk_g_xhg_bkg_cov_sqrts5020GeV");
   SetVariances (h_trk_g_pth_yield[0], h2_trk_g_pth_cov[0]);
   SetVariances (h_trk_g_pth_bkg_yield[0], h2_trk_g_pth_bkg_cov[0]);
-  SetVariances (h_trk_g_xhg_yield[0], h2_trk_g_xhg_cov[0]);
-  SetVariances (h_trk_g_xhg_bkg_yield[0], h2_trk_g_xhg_bkg_cov[0]);
+  //SetVariances (h_trk_g_xhg_yield[0], h2_trk_g_xhg_cov[0]);
+  //SetVariances (h_trk_g_xhg_bkg_yield[0], h2_trk_g_xhg_bkg_cov[0]);
   h_trk_g_pth_yield[0]->Add (h_trk_g_pth_bkg_yield[0], -1);
-  h_trk_g_xhg_yield[0]->Add (h_trk_g_xhg_bkg_yield[0], -1);
+  //h_trk_g_xhg_yield[0]->Add (h_trk_g_xhg_bkg_yield[0], -1);
   h_g_pt_yield[0] = (TH1D*) inFile->Get ("h_g_pt_yield_sqrts5020GeV");
 
   inFile = new TFile ("rootFiles/photon_out_sqrts8160GeV.root", "read");
 
   h_trk_g_pth_yield[1] = (TH1D*) inFile->Get ("h_trk_g_pth_yield_sqrts8160GeV");
   h_trk_g_pth_bkg_yield[1] = (TH1D*) inFile->Get ("h_trk_g_pth_bkg_yield_sqrts8160GeV");
-  h_trk_g_xhg_yield[1] = (TH1D*) inFile->Get ("h_trk_g_xhg_yield_sqrts8160GeV");
-  h_trk_g_xhg_bkg_yield[1] = (TH1D*) inFile->Get ("h_trk_g_xhg_bkg_yield_sqrts8160GeV");
+  //h_trk_g_xhg_yield[1] = (TH1D*) inFile->Get ("h_trk_g_xhg_yield_sqrts8160GeV");
+  //h_trk_g_xhg_bkg_yield[1] = (TH1D*) inFile->Get ("h_trk_g_xhg_bkg_yield_sqrts8160GeV");
   h2_trk_g_pth_cov[1] = (TH2D*) inFile->Get ("h2_trk_g_pth_cov_sqrts8160GeV");
   h2_trk_g_pth_bkg_cov[1] = (TH2D*) inFile->Get ("h2_trk_g_pth_bkg_cov_sqrts8160GeV");
-  h2_trk_g_xhg_cov[1] = (TH2D*) inFile->Get ("h2_trk_g_xhg_cov_sqrts8160GeV");
-  h2_trk_g_xhg_bkg_cov[1] = (TH2D*) inFile->Get ("h2_trk_g_xhg_bkg_cov_sqrts8160GeV");
+  //h2_trk_g_xhg_cov[1] = (TH2D*) inFile->Get ("h2_trk_g_xhg_cov_sqrts8160GeV");
+  //h2_trk_g_xhg_bkg_cov[1] = (TH2D*) inFile->Get ("h2_trk_g_xhg_bkg_cov_sqrts8160GeV");
   SetVariances (h_trk_g_pth_yield[1], h2_trk_g_pth_cov[1]);
   SetVariances (h_trk_g_pth_bkg_yield[1], h2_trk_g_pth_bkg_cov[1]);
-  SetVariances (h_trk_g_xhg_yield[1], h2_trk_g_xhg_cov[1]);
-  SetVariances (h_trk_g_xhg_bkg_yield[1], h2_trk_g_xhg_bkg_cov[1]);
+  //SetVariances (h_trk_g_xhg_yield[1], h2_trk_g_xhg_cov[1]);
+  //SetVariances (h_trk_g_xhg_bkg_yield[1], h2_trk_g_xhg_bkg_cov[1]);
   h_trk_g_pth_yield[1]->Add (h_trk_g_pth_bkg_yield[1], -1);
-  h_trk_g_xhg_yield[1]->Add (h_trk_g_xhg_bkg_yield[1], -1);
+  //h_trk_g_xhg_yield[1]->Add (h_trk_g_xhg_bkg_yield[1], -1);
   h_g_pt_yield[1] = (TH1D*) inFile->Get ("h_g_pt_yield_sqrts8160GeV");
 
   h_trk_g_pth_yield_ratio = (TH1D*) h_trk_g_pth_yield[1]->Clone ("h_trk_g_pth_yield_ratio");
@@ -192,17 +195,19 @@ int main () {
     h->Draw ("hist same");
 
     myText (0.65, 0.80, kBlack, "Pythia 8 #it{pp}", 0.04/0.6);
-    myText (0.65, 0.71, kBlack, "#it{p}_{T}^{Z} > 5 GeV", 0.04/0.6);
+    myText (0.65, 0.71, kBlack, "#it{p}_{T}^{Z} > 30 GeV", 0.04/0.6);
     myText (0.65, 0.62, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
     myText (0.65, 0.53, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
 
     dPad->cd (); 
     dPad->SetLogx ();
-    h = h_trk_z_pth_yield_ratio;
-    h->SetLineColor (kBlack);
-    h->SetMarkerColor (kBlack);
+    h = (TH1D*) h_trk_z_pth_yield_ratio->Clone ("h");
+    TGAE* g = make_graph (h);
+    h->Reset ();
     h->GetXaxis ()->SetMoreLogLabels ();
+    h->GetXaxis ()->SetRangeUser (h->GetBinLowEdge (1), h->GetBinLowEdge (h->GetNbinsX ()) + h->GetBinWidth (h->GetNbinsX ()));
     h->GetYaxis ()->SetRangeUser (0.74, 1.26);
+    //h->GetYaxis ()->SetRangeUser (0.0, 2.0);
 
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
@@ -214,7 +219,13 @@ int main () {
     h->GetYaxis ()->SetTitleOffset (1.5*0.4);
     h->GetYaxis ()->CenterTitle ();
 
-    h->Draw ("e1");
+    h->SetLineWidth (0);
+    h->Draw ("hist");
+
+    g->SetLineColor (kBlack);
+    g->SetMarkerColor (kBlack);
+    g->SetMarkerStyle (kFullCircle);
+    ((TGAE*) g->Clone ())->Draw ("P");
 
     c->SaveAs ("Plots/Ztagged_ptch_yields_comparison.pdf"); 
   }
@@ -266,11 +277,13 @@ int main () {
 
     dPad->cd (); 
     dPad->SetLogx ();
-    h = h_trk_g_pth_yield_ratio;
-    h->SetLineColor (kBlack);
-    h->SetMarkerColor (kBlack);
+    h = (TH1D*) h_trk_g_pth_yield_ratio->Clone ("h");
+    TGAE* g = make_graph (h);
+    h->Reset ();
     h->GetXaxis ()->SetMoreLogLabels ();
+    h->GetXaxis ()->SetRangeUser (h->GetBinLowEdge (1), h->GetBinLowEdge (h->GetNbinsX ()) + h->GetBinWidth (h->GetNbinsX ()));
     h->GetYaxis ()->SetRangeUser (0.74, 1.26);
+    //h->GetYaxis ()->SetRangeUser (0.0, 2.0);
 
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
@@ -282,7 +295,13 @@ int main () {
     h->GetYaxis ()->SetTitleOffset (1.5*0.4);
     h->GetYaxis ()->CenterTitle ();
 
-    h->Draw ("e1");
+    h->SetLineWidth (0);
+    h->Draw ("hist");
+
+    g->SetLineColor (kBlack);
+    g->SetMarkerColor (kBlack);
+    g->SetMarkerStyle (kFullCircle);
+    ((TGAE*) g->Clone ())->Draw ("P");
 
     c->SaveAs ("Plots/Photontagged_ptch_yields_comparison.pdf"); 
   }
@@ -333,10 +352,11 @@ int main () {
 
     dPad->cd (); 
     dPad->SetLogx ();
-    h = h_z_pt_yield_ratio;
-    h->SetLineColor (kBlack);
-    h->SetMarkerColor (kBlack);
+    h = (TH1D*) h_z_pt_yield_ratio->Clone ("h");
+    TGAE* g = make_graph (h);
+    h->Reset ();
     h->GetXaxis ()->SetMoreLogLabels ();
+    h->GetXaxis ()->SetRangeUser (h->GetBinLowEdge (1), h->GetBinLowEdge (h->GetNbinsX ()) + h->GetBinWidth (h->GetNbinsX ()));
     h->GetYaxis ()->SetRangeUser (0.74, 1.26);
 
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{Z} [GeV]");
@@ -349,7 +369,13 @@ int main () {
     h->GetYaxis ()->SetTitleOffset (1.5*0.4);
     h->GetYaxis ()->CenterTitle ();
 
-    h->Draw ("e1");
+    h->SetLineWidth (0);
+    h->Draw ("hist");
+
+    g->SetLineColor (kBlack);
+    g->SetMarkerColor (kBlack);
+    g->SetMarkerStyle (kFullCircle);
+    ((TGAE*) g->Clone ())->Draw ("P");
 
     c->SaveAs ("Plots/Z_pt_yields_comparison.pdf"); 
   }
@@ -400,10 +426,11 @@ int main () {
 
     dPad->cd (); 
     dPad->SetLogx ();
-    h = h_g_pt_yield_ratio;
-    h->SetLineColor (kBlack);
-    h->SetMarkerColor (kBlack);
+    h = (TH1D*) h_g_pt_yield_ratio->Clone ("h");
+    TGAE* g = make_graph (h);
+    h->Reset ();
     h->GetXaxis ()->SetMoreLogLabels ();
+    h->GetXaxis ()->SetRangeUser (h->GetBinLowEdge (1), h->GetBinLowEdge (h->GetNbinsX ()) + h->GetBinWidth (h->GetNbinsX ()));
     h->GetYaxis ()->SetRangeUser (0.74, 1.26);
 
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{#gamma} [GeV]");
@@ -416,7 +443,13 @@ int main () {
     h->GetYaxis ()->SetTitleOffset (1.5*0.4);
     h->GetYaxis ()->CenterTitle ();
 
-    h->Draw ("e1");
+    h->SetLineWidth (0);
+    h->Draw ("hist");
+
+    g->SetLineColor (kBlack);
+    g->SetMarkerColor (kBlack);
+    g->SetMarkerStyle (kFullCircle);
+    ((TGAE*) g->Clone ())->Draw ("P");
 
     c->SaveAs ("Plots/Photon_pt_yields_comparison.pdf"); 
   }
@@ -424,4 +457,9 @@ int main () {
   
 
   return 0;
+}
+
+
+void plotter () {
+  main ();
 }
