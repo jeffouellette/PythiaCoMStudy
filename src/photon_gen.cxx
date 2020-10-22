@@ -62,6 +62,7 @@ int main (int argc, char** argv) {
   float b_part_pt[10000];
   float b_part_eta[10000];
   float b_part_phi[10000];
+  float b_part_e[10000];
 
   TTree* outTree = new TTree ("tree", "tree");
 
@@ -82,6 +83,7 @@ int main (int argc, char** argv) {
   outTree->Branch ("part_pt",   &b_part_pt,   "part_pt[part_n]/F");
   outTree->Branch ("part_eta",  &b_part_eta,  "part_eta[part_n]/F");
   outTree->Branch ("part_phi",  &b_part_phi,  "part_phi[part_n]/F");
+  outTree->Branch ("part_e",    &b_part_e,    "part_e[part_n]/F");
 
   for (int iEvent = 0; iEvent < nEvents; iEvent++) {
     if (nEvents > 100 && iEvent % (nEvents / 100) == 0)
@@ -103,9 +105,20 @@ int main (int argc, char** argv) {
       b_photon_pt = pythia.event[i].pT ();
       b_photon_eta = pythia.event[i].eta ();
       b_photon_phi = pythia.event[i].phi ();
+
     }
 
-    if (b_photon_pt < 50) {
+    float b_photon_etcone40 = 0;
+    for (int i = 0; i < pythia.event.size (); i++) {
+      
+      if (!(pythia.event[i].isFinal () && pythia.event[i].isHadron ()))
+        continue;
+
+      if (DeltaR (b_photon_eta, pythia.event[i].eta (), b_photon_phi, pythia.event[i].phi ()) < 0.4)
+        b_photon_etcone40 += pythia.event[i].eT ();
+    }
+
+    if (b_photon_pt < 50 || b_photon_etcone40 >= 4.8 + 4.2e-3 * b_photon_pt) {
       iEvent--;
       continue;
     }
@@ -117,6 +130,7 @@ int main (int argc, char** argv) {
         b_part_pt[b_part_n]   = pythia.event[i].pT ();
         b_part_eta[b_part_n]  = pythia.event[i].eta ();
         b_part_phi[b_part_n]  = pythia.event[i].phi ();
+        b_part_e[b_part_n]    = pythia.event[i].e ();
         b_part_n++;
       }
     }
