@@ -152,7 +152,7 @@ int main (int argc, char** argv) {
     b_part_n = 0;
     for (int i = 0; i < pythia.event.size (); i++) {
       if (pythia.event[i].isFinal () && pythia.event[i].isHadron ()) {
-        particles.push_back (fastjet::PseudoJet (pythia.event[i].pT (), pythia.event[i].eta (), pythia.event[i].phi (), pythia.event[i].e ()));
+        particles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].py (), pythia.event[i].e ()));
         if (pythia.event[i].isCharged ()) {
           b_part_pt[b_part_n]   = pythia.event[i].pT ();
           b_part_eta[b_part_n]  = pythia.event[i].eta ();
