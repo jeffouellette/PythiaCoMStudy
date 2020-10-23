@@ -75,6 +75,7 @@ int main (int argc, char** argv) {
   float b_part_pt[10000];
   float b_part_eta[10000];
   float b_part_phi[10000];
+  float b_part_e[10000];
 
   TTree* outTree = new TTree ("tree", "tree");
 
@@ -96,6 +97,7 @@ int main (int argc, char** argv) {
   outTree->Branch ("part_pt",   &b_part_pt,   "part_pt[part_n]/F");
   outTree->Branch ("part_eta",  &b_part_eta,  "part_eta[part_n]/F");
   outTree->Branch ("part_phi",  &b_part_phi,  "part_phi[part_n]/F");
+  outTree->Branch ("part_e",    &b_part_e,    "part_e[part_n]/F");
 
   TLorentzVector l1, l2, z;
   
@@ -147,11 +149,11 @@ int main (int argc, char** argv) {
     b_part_n = 0;
     for (int i = 0; i < pythia.event.size (); i++) {
 
-      if (pythia.event[i].isFinal () && pythia.event[i].isHadron () && pythia.event[i].isCharged ()) {
-      //if (pythia.event[i].isFinal () && pythia.event[i].isHadron () && minTrkPt <= pythia.event[i].pT () && pythia.event[i].pT () <= maxTrkPt && pythia.event[i].isCharged ()) {
+      if (pythia.event[i].isFinal () && pythia.event[i].isHadron ()) {
         b_part_pt[b_part_n]   = pythia.event[i].pT ();
         b_part_eta[b_part_n]  = pythia.event[i].eta ();
         b_part_phi[b_part_n]  = pythia.event[i].phi ();
+        b_part_e[b_part_n]    = pythia.event[i].e ();
         b_part_n++;
       }
     }

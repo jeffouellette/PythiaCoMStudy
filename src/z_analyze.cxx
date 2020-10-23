@@ -27,6 +27,22 @@
 using namespace PythiaCoMStudy;
 
 
+
+float GetZPIDBin (int code) {
+  switch (code) {
+  case 221: return 0.5;
+  case 231: return 1.5;
+  case 232: return 2.5;
+  case 241: return 3.5;
+  case 242: return 4.5;
+  case 243: return 5.5;
+  case 244: return 6.5;
+  default: return -0.5;
+  }
+}
+
+
+
 int main (int argc, char** argv) {
 
   if (argc < 4) {
@@ -41,7 +57,7 @@ int main (int argc, char** argv) {
   TFile* inFile;
   TTree* inTree;
 
-  //int code = 0;
+  int code = 0;
   //int id1 = 0;
   //int id2 = 0;
   //float x1pdf = 0;
@@ -64,7 +80,7 @@ int main (int argc, char** argv) {
 
   const int nEvents = inTree->GetEntries ();
 
-  //inTree->SetBranchAddress ("code",       &code);
+  inTree->SetBranchAddress ("code",       &code);
   //inTree->SetBranchAddress ("id1",        &id1);
   //inTree->SetBranchAddress ("id2",        &id2);
   //inTree->SetBranchAddress ("x1pdf",      &x1pdf);
@@ -93,15 +109,17 @@ int main (int argc, char** argv) {
 
   TH1D* h_z_pt_yield;
 
-  const float pthBins[11] = {1, 1.5, 2, 3, 4, 6, 8, 10, 15, 30, 60};
+  TH1D* h_z_pids;
+
+  const float pthBins[10] = {0.5, 1, 2, 4, 8, 15, 30, 60, 120, 240};
   const short nPthBins = sizeof (pthBins) / sizeof (pthBins[0]) - 1;
-  const float xhzBins[12] = {1./60., 1./30., 1./15., 1./10., 1./8., 1./6., 1./4., 1./3., 1./2., 1./1.5, 1., 2.};
+  const float xhzBins[9] = {1./120., 1./60., 1./30., 1./15., 1./8., 1./4., 1./2., 1., 2.};
   const short nXhZBins = sizeof (xhzBins) / sizeof (xhzBins[0]) - 1;
   const int nPtZBins = 30;
   const double* pTZBins = logspace (5, 300, nPtZBins);
 
-  float trk_counts[2][11] = {{}, {}};
-  float trk_counts_bkg[2][11] = {{}, {}};
+  float trk_counts[2][10] = {{}, {}};
+  float trk_counts_bkg[2][10] = {{}, {}};
 
   TFile* outFile = new TFile (outFileName.c_str (), "recreate");
 
@@ -126,8 +144,19 @@ int main (int argc, char** argv) {
   h_z_pt_yield = new TH1D (Form ("h_z_pt_yield_%s", name.c_str ()), ";#it{p}_{T}^{Z} [GeV]", nPtZBins, pTZBins);
   h_z_pt_yield->Sumw2 ();
 
+  h_z_pids = new TH1D (Form ("h_z_pids_%s", name.c_str ()), "", 7, 0, 7);
+  h_z_pids->GetXaxis ()->SetBinLabel (1, "f#bar{f}#rightarrowZ");       // code 221
+  h_z_pids->GetXaxis ()->SetBinLabel (2, "f#bar{f}#rightarrowZZ");      // code 231
+  h_z_pids->GetXaxis ()->SetBinLabel (3, "f#bar{f}#rightarrowZW");      // code 232
+  h_z_pids->GetXaxis ()->SetBinLabel (4, "q#bar{q}#rightarrowZg");      // code 241
+  h_z_pids->GetXaxis ()->SetBinLabel (5, "qg#rightarrowZq");            // code 242
+  h_z_pids->GetXaxis ()->SetBinLabel (6, "f#bar{f}#rightarrowZ#gamma"); // code 243
+  h_z_pids->GetXaxis ()->SetBinLabel (7, "f#gamma#rightarrowZf");       // code 244
+
   for (int iEvent = 0; iEvent < nEvents; iEvent++) {
     inTree->GetEntry (iEvent);
+
+    h_z_pids->Fill (GetZPIDBin (code));
 
     float sumptcw = 0;
     float sumptccw = 0;
@@ -214,7 +243,7 @@ int main (int argc, char** argv) {
       }
     }
 
-    for (int i = 0; i < 11; i++) {
+    for (int i = 0; i < 10; i++) {
       trk_counts[0][i] = 0;
       trk_counts[1][i] = 0;
       trk_counts_bkg[0][i] = 0;
@@ -281,6 +310,7 @@ int main (int argc, char** argv) {
   h2_trk_z_pth_bkg_cov->Write ();
   h2_trk_z_xhz_bkg_cov->Write ();
   h_z_pt_yield->Write ();
+  h_z_pids->Write ();
   
   outFile->Close ();
 

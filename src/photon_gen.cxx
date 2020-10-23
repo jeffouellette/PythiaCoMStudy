@@ -113,7 +113,7 @@ int main (int argc, char** argv) {
     b_part_n = 0;
     for (int i = 0; i < pythia.event.size (); i++) {
 
-      if (pythia.event[i].isFinal () && pythia.event[i].isHadron () && pythia.event[i].isCharged ()) {
+      if (pythia.event[i].isFinal () && pythia.event[i].isHadron ()) {
         b_part_pt[b_part_n]   = pythia.event[i].pT ();
         b_part_eta[b_part_n]  = pythia.event[i].eta ();
         b_part_phi[b_part_n]  = pythia.event[i].phi ();

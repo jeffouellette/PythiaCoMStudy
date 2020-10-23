@@ -54,6 +54,13 @@ TH1D* h_z_pt_yield_ratio;
 TH1D* h_g_pt_yield[2];
 TH1D* h_g_pt_yield_ratio;
 
+TH1D* h_z_pids[2];
+TH1D* h_g_pids[2];
+
+TH1D* h_g_jet_pt_yield[2];
+TH2D* h2_g_jet_pt_cov[2];
+TH1D* h_g_jet_pt_yield_ratio;
+
 
 void SetVariances (TH1D* h, TH2D* h2) {
   const int nb = h->GetNbinsX ();
@@ -89,6 +96,8 @@ int main () {
   //h_trk_z_xhz_yield[0]->Add (h_trk_z_xhz_bkg_yield[0], -1);
   h_z_pt_yield[0] = (TH1D*) inFile->Get ("h_z_pt_yield_sqrts5020GeV");
 
+  h_z_pids[0] = (TH1D*) inFile->Get ("h_z_pids_sqrts5020GeV");
+
   inFile = new TFile ("rootFiles/z_out_sqrts8160GeV.root", "read");
 
   h_trk_z_pth_yield[1] = (TH1D*) inFile->Get ("h_trk_z_pth_yield_sqrts8160GeV");
@@ -106,6 +115,8 @@ int main () {
   h_trk_z_pth_yield[1]->Add (h_trk_z_pth_bkg_yield[1], -1);
   //h_trk_z_xhz_yield[1]->Add (h_trk_z_xhz_bkg_yield[1], -1);
   h_z_pt_yield[1] = (TH1D*) inFile->Get ("h_z_pt_yield_sqrts8160GeV");
+
+  h_z_pids[1] = (TH1D*) inFile->Get ("h_z_pids_sqrts8160GeV");
 
   h_trk_z_pth_yield_ratio = (TH1D*) h_trk_z_pth_yield[1]->Clone ("h_trk_z_pth_yield_ratio");
   h_trk_z_pth_yield_ratio->Divide (h_trk_z_pth_yield[0]);
@@ -131,6 +142,13 @@ int main () {
   //h_trk_g_xhg_yield[0]->Add (h_trk_g_xhg_bkg_yield[0], -1);
   h_g_pt_yield[0] = (TH1D*) inFile->Get ("h_g_pt_yield_sqrts5020GeV");
 
+  h_g_pids[0] = (TH1D*) inFile->Get ("h_g_pids_sqrts5020GeV");
+
+  h_g_jet_pt_yield[0] = (TH1D*) inFile->Get ("h_g_jet_pt_yield_sqrts5020GeV");
+  h2_g_jet_pt_cov[0] = (TH2D*) inFile->Get ("h2_g_jet_pt_cov_sqrts5020GeV");
+  SetVariances (h_g_jet_pt_yield[0], h2_g_jet_pt_cov[0]);
+
+
   inFile = new TFile ("rootFiles/photon_out_sqrts8160GeV.root", "read");
 
   h_trk_g_pth_yield[1] = (TH1D*) inFile->Get ("h_trk_g_pth_yield_sqrts8160GeV");
@@ -149,10 +167,18 @@ int main () {
   //h_trk_g_xhg_yield[1]->Add (h_trk_g_xhg_bkg_yield[1], -1);
   h_g_pt_yield[1] = (TH1D*) inFile->Get ("h_g_pt_yield_sqrts8160GeV");
 
+  h_g_pids[1] = (TH1D*) inFile->Get ("h_g_pids_sqrts8160GeV");
+
+  h_g_jet_pt_yield[1] = (TH1D*) inFile->Get ("h_g_jet_pt_yield_sqrts8160GeV");
+  h2_g_jet_pt_cov[1] = (TH2D*) inFile->Get ("h2_g_jet_pt_cov_sqrts8160GeV");
+  SetVariances (h_g_jet_pt_yield[1], h2_g_jet_pt_cov[1]);
+
   h_trk_g_pth_yield_ratio = (TH1D*) h_trk_g_pth_yield[1]->Clone ("h_trk_g_pth_yield_ratio");
   h_trk_g_pth_yield_ratio->Divide (h_trk_g_pth_yield[0]);
   h_g_pt_yield_ratio = (TH1D*) h_g_pt_yield[1]->Clone ("h_g_pt_yield_ratio");
   h_g_pt_yield_ratio->Divide (h_g_pt_yield[0]);
+  h_g_jet_pt_yield_ratio = (TH1D*) h_g_jet_pt_yield[1]->Clone ("h_g_jet_pt_yield_ratio");
+  h_g_jet_pt_yield_ratio->Divide (h_g_jet_pt_yield[0]);
 
 
 
@@ -196,7 +222,7 @@ int main () {
 
     myText (0.65, 0.80, kBlack, "Pythia 8 #it{pp}", 0.04/0.6);
     myText (0.65, 0.71, kBlack, "#it{p}_{T}^{Z} > 30 GeV", 0.04/0.6);
-    myText (0.65, 0.62, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
+    myText (0.65, 0.615, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
     myText (0.65, 0.53, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
 
     dPad->cd (); 
@@ -212,7 +238,8 @@ int main () {
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
     h->GetXaxis ()->SetLabelSize (0.04/0.4);
-    h->GetXaxis ()->SetTitleOffset (3.0*0.4);
+    h->GetXaxis ()->SetTitleOffset (2.7*0.4);
+    h->GetXaxis ()->SetLabelOffset (-0.05*0.4);
     h->GetYaxis ()->SetTitle ("8.16 / 5.02");
     h->GetYaxis ()->SetTitleSize (0.04/0.4);
     h->GetYaxis ()->SetLabelSize (0.04/0.4);
@@ -272,7 +299,7 @@ int main () {
 
     myText (0.65, 0.80, kBlack, "Pythia 8 #it{pp}", 0.04/0.6);
     myText (0.65, 0.71, kBlack, "#it{p}_{T}^{#gamma} > 50 GeV", 0.04/0.6);
-    myText (0.65, 0.62, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
+    myText (0.65, 0.615, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
     myText (0.65, 0.53, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
 
     dPad->cd (); 
@@ -288,7 +315,8 @@ int main () {
     h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
     h->GetXaxis ()->SetTitleSize (0.04/0.4);
     h->GetXaxis ()->SetLabelSize (0.04/0.4);
-    h->GetXaxis ()->SetTitleOffset (3.0*0.4);
+    h->GetXaxis ()->SetTitleOffset (2.7*0.4);
+    h->GetXaxis ()->SetLabelOffset (-0.05*0.4);
     h->GetYaxis ()->SetTitle ("8.16 / 5.02");
     h->GetYaxis ()->SetTitleSize (0.04/0.4);
     h->GetYaxis ()->SetLabelSize (0.04/0.4);
@@ -347,8 +375,8 @@ int main () {
     h->Draw ("hist same");
 
     myText (0.65, 0.80, kBlack, "Pythia 8 #it{pp}", 0.04/0.6);
-    myText (0.65, 0.71, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
-    myText (0.65, 0.62, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
+    myText (0.65, 0.615, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
+    myText (0.65, 0.53, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
 
     dPad->cd (); 
     dPad->SetLogx ();
@@ -454,7 +482,164 @@ int main () {
     c->SaveAs ("Plots/Photon_pt_yields_comparison.pdf"); 
   }
 
-  
+
+
+
+  {
+    const char* canvasName = "c_g_pids";
+    TCanvas* c = new TCanvas (canvasName, "", 800, 800);
+
+    //gStyle->SetHistMinimumZero ();
+
+    TH1D* h = nullptr; 
+
+    h = h_g_pids[0];
+    h->SetFillColor (46);
+    h->SetMinimum (0);
+    h->GetXaxis ()->SetTitle ("Process");
+    h->GetXaxis ()->SetTitleSize (0.04);
+    //h->GetXaxis ()->SetLabelSize (0.04);
+    h->GetXaxis ()->SetTitleOffset (1.5);
+    h->GetYaxis ()->SetTitle ("Counts");
+    h->GetYaxis ()->SetTitleSize (0.04);
+    h->GetYaxis ()->SetLabelSize (0.03);
+    h->GetYaxis ()->SetTitleOffset (1.8);
+    h->SetBarWidth (0.2);
+    h->SetBarOffset (0.3);
+
+    h->DrawCopy ("b");
+
+    h = h_g_pids[1]; 
+    h->SetFillColor (38);
+    h->SetBarWidth (0.2);
+    h->SetBarOffset (0.5);
+    h->DrawCopy ("b same");
+
+    myText (0.50, 0.80, kBlack, "Pythia 8 #it{pp}", 0.035);
+    myText (0.50, 0.75, kBlack, "Prompt photons, #it{E}_{T}^{#gamma} > 50 GeV", 0.035);
+    myBoxTextNoLine (0.56, 0.70, 0.05, 46, "#sqrt{s} = 5.02 TeV", 0.035);
+    myBoxTextNoLine (0.56, 0.65, 0.05, 38, "#sqrt{s} = 8.16 TeV", 0.035);
+
+    c->SaveAs ("Plots/Photon_pids.pdf");
+  }
+
+
+
+
+  {
+    const char* canvasName = "c_z_pids";
+    TCanvas* c = new TCanvas (canvasName, "", 800, 800);
+
+    //gStyle->SetHistMinimumZero ();
+
+    TH1D* h = nullptr; 
+
+    h = h_z_pids[0];
+    h->SetFillColor (46);
+    h->SetMinimum (0);
+    h->GetXaxis ()->SetTitle ("Process");
+    h->GetXaxis ()->SetTitleSize (0.04);
+    //h->GetXaxis ()->SetLabelSize (0.04);
+    h->GetXaxis ()->SetTitleOffset (1.5);
+    h->GetYaxis ()->SetTitle ("Counts");
+    h->GetYaxis ()->SetTitleSize (0.04);
+    h->GetYaxis ()->SetLabelSize (0.03);
+    h->GetYaxis ()->SetTitleOffset (1.8);
+    h->SetBarWidth (0.3);
+    h->SetBarOffset (0.2);
+
+    h->DrawCopy ("b");
+
+    h = h_z_pids[1]; 
+    h->SetFillColor (38);
+    h->SetBarWidth (0.3);
+    h->SetBarOffset (0.5);
+    h->DrawCopy ("b same");
+
+    myText (0.50, 0.80, kBlack, "Pythia 8 #it{pp}", 0.035);
+    myText (0.50, 0.75, kBlack, "Z bosons, #it{p}_{T}^{#it{Z}} > 5 GeV", 0.035);
+    myBoxTextNoLine (0.56, 0.70, 0.05, 46, "#sqrt{s} = 5.02 TeV", 0.035);
+    myBoxTextNoLine (0.56, 0.65, 0.05, 38, "#sqrt{s} = 8.16 TeV", 0.035);
+
+    c->SaveAs ("Plots/Z_pids.pdf");
+  }
+
+
+
+
+  {
+    const char* canvasName = "c_g_jet_pt_yield";
+    TCanvas* c = new TCanvas (canvasName, "", 800, 800);
+    TPad* uPad = new TPad (Form ("%s_uPad", canvasName), "", 0.0, 0.4, 1.0, 1.0);
+    TPad* dPad = new TPad (Form ("%s_dPad", canvasName), "", 0.0, 0.0, 1.0, 0.4);
+
+    uPad->SetBottomMargin (0);
+    dPad->SetTopMargin (0);
+    dPad->SetBottomMargin (0.25);
+    uPad->Draw ();
+    dPad->Draw ();
+
+    TH1D* h = nullptr; 
+
+    uPad->cd (); 
+    uPad->SetLogx ();
+    uPad->SetLogy ();
+    h = h_g_jet_pt_yield[0];
+    h->SetLineColor (kAzure-2);
+    h->SetLineWidth (2);
+    h->GetXaxis ()->SetTitle ("#it{p}_{T}^{ch} [GeV]");
+    h->GetXaxis ()->SetTitleSize (0.04/0.6);
+    h->GetXaxis ()->SetLabelSize (0.04/0.6);
+    h->GetXaxis ()->SetTitleOffset (1.5*0.6);
+    h->GetYaxis ()->SetTitle ("(1/N_{#gamma}) (dN_{jet} / d#it{p}_{T}^{jet}) [GeV^{-1}]");
+    h->GetYaxis ()->SetTitleSize (0.04/0.6);
+    h->GetYaxis ()->SetLabelSize (0.04/0.6);
+    h->GetYaxis ()->SetTitleOffset (1.5*0.6);
+
+    h->Draw ("hist");
+
+    h = h_g_jet_pt_yield[1];
+    h->SetLineColor (kRed+1);
+    h->SetLineWidth (2);
+
+    h->Draw ("hist same");
+
+    myText (0.65, 0.80, kBlack, "Pythia 8 #it{pp}", 0.04/0.6);
+    myText (0.65, 0.71, kBlack, "#it{p}_{T}^{#gamma} = 50-70 GeV", 0.04/0.6);
+    myText (0.65, 0.615, kAzure-2, "#sqrt{s} = 5.02 TeV", 0.04/0.6);
+    myText (0.65, 0.53, kRed+1, "#sqrt{s} = 8.16 TeV", 0.04/0.6);
+
+    dPad->cd (); 
+    dPad->SetLogx ();
+    h = (TH1D*) h_g_jet_pt_yield_ratio->Clone ("h");
+    TGAE* g = make_graph (h);
+    h->Reset ();
+    h->GetXaxis ()->SetMoreLogLabels ();
+    h->GetXaxis ()->SetRangeUser (h->GetBinLowEdge (1), h->GetBinLowEdge (h->GetNbinsX ()) + h->GetBinWidth (h->GetNbinsX ()));
+    h->GetYaxis ()->SetRangeUser (0.64, 1.36);
+    //h->GetYaxis ()->SetRangeUser (0.0, 2.0);
+
+    h->GetXaxis ()->SetTitle ("#it{p}_{T}^{jet} [GeV]");
+    h->GetXaxis ()->SetTitleSize (0.04/0.4);
+    h->GetXaxis ()->SetLabelSize (0.04/0.4);
+    h->GetXaxis ()->SetTitleOffset (2.7*0.4);
+    h->GetXaxis ()->SetLabelOffset (-0.05*0.4);
+    h->GetYaxis ()->SetTitle ("8.16 / 5.02");
+    h->GetYaxis ()->SetTitleSize (0.04/0.4);
+    h->GetYaxis ()->SetLabelSize (0.04/0.4);
+    h->GetYaxis ()->SetTitleOffset (1.5*0.4);
+    h->GetYaxis ()->CenterTitle ();
+
+    h->SetLineWidth (0);
+    h->Draw ("hist");
+
+    g->SetLineColor (kBlack);
+    g->SetMarkerColor (kBlack);
+    g->SetMarkerStyle (kFullCircle);
+    ((TGAE*) g->Clone ())->Draw ("P");
+
+    c->SaveAs ("Plots/Photontagged_ptj_yields_comparison.pdf"); 
+  }
 
   return 0;
 }
