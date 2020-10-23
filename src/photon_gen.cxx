@@ -93,10 +93,10 @@ int main (int argc, char** argv) {
   outTree->Branch ("photon_phi", &b_photon_phi, "photon_phi/F");
 
   outTree->Branch ("akt4_jet_n",    &b_akt4_jet_n,    "akt4_jet_n/I");
-  outTree->Branch ("akt4_jet_pt",   &b_akt4_jet_pt,   "akt4_jet_pt/F");
-  outTree->Branch ("akt4_jet_eta",  &b_akt4_jet_eta,  "akt4_jet_eta/F");
-  outTree->Branch ("akt4_jet_phi",  &b_akt4_jet_phi,  "akt4_jet_phi/F");
-  outTree->Branch ("akt4_jet_e",    &b_akt4_jet_e,    "akt4_jet_e/F");
+  outTree->Branch ("akt4_jet_pt",   &b_akt4_jet_pt,   "akt4_jet_pt[akt4_jet_n]/F");
+  outTree->Branch ("akt4_jet_eta",  &b_akt4_jet_eta,  "akt4_jet_eta[akt4_jet_n]/F");
+  outTree->Branch ("akt4_jet_phi",  &b_akt4_jet_phi,  "akt4_jet_phi[akt4_jet_n]/F");
+  outTree->Branch ("akt4_jet_e",    &b_akt4_jet_e,    "akt4_jet_e[akt4_jet_n]/F");
 
   outTree->Branch ("part_n",    &b_part_n,    "part_n/I");
   outTree->Branch ("part_pt",   &b_part_pt,   "part_pt[part_n]/F");

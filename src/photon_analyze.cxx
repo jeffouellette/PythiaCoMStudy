@@ -68,10 +68,10 @@ int main (int argc, char** argv) {
   float photon_phi = 0;
 
   int akt4_jet_n = 0;
-  float akt4_jet_pt[10000];
-  float akt4_jet_eta[10000];
-  float akt4_jet_phi[10000];
-  float akt4_jet_e[10000];
+  float akt4_jet_pt[1000];
+  float akt4_jet_eta[1000];
+  float akt4_jet_phi[1000];
+  float akt4_jet_e[1000];
 
   int part_n = 0;
   float part_pt[10000];
