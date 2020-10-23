@@ -66,6 +66,13 @@ int main (int argc, char** argv) {
   float photon_pt = 0;
   float photon_eta = 0;
   float photon_phi = 0;
+
+  int akt4_jet_n = 0;
+  float akt4_jet_pt[10000];
+  float akt4_jet_eta[10000];
+  float akt4_jet_phi[10000];
+  float akt4_jet_e[10000];
+
   int part_n = 0;
   float part_pt[10000];
   float part_eta[10000];
@@ -86,9 +93,17 @@ int main (int argc, char** argv) {
   //inTree->SetBranchAddress ("Q",          &Q);
   //inTree->SetBranchAddress ("isValence1", &isValence1);
   //inTree->SetBranchAddress ("isValence2", &isValence2);
-  inTree->SetBranchAddress ("photon_pt",       &photon_pt);
-  inTree->SetBranchAddress ("photon_eta",      &photon_eta);
-  inTree->SetBranchAddress ("photon_phi",      &photon_phi);
+
+  inTree->SetBranchAddress ("photon_pt",   &photon_pt);
+  inTree->SetBranchAddress ("photon_eta",  &photon_eta);
+  inTree->SetBranchAddress ("photon_phi",  &photon_phi);
+
+  inTree->SetBranchAddress ("akt4_jet_n",   &akt4_jet_n);
+  inTree->SetBranchAddress ("akt4_jet_pt",  &akt4_jet_pt);
+  inTree->SetBranchAddress ("akt4_jet_eta", &akt4_jet_eta);
+  inTree->SetBranchAddress ("akt4_jet_phi", &akt4_jet_phi);
+  inTree->SetBranchAddress ("akt4_jet_e",   &akt4_jet_e);
+
   inTree->SetBranchAddress ("part_n",     &part_n);
   inTree->SetBranchAddress ("part_pt",    &part_pt);
   inTree->SetBranchAddress ("part_eta",   &part_eta);
@@ -123,7 +138,7 @@ int main (int argc, char** argv) {
   const float xhgBins[13] = {1./120., 1./60., 1./30., 1./15., 1./10., 1./8., 1./6., 1./4., 1./3., 1./2., 1./1.5, 1., 2.};
   const short nXhGBins = sizeof (xhgBins) / sizeof (xhgBins[0]) - 1;
   const short nDPhiBins = 20;
-  const float dPhiBins = linspace (0, pi, nDPhiBins);
+  const double* dPhiBins = linspace (0, pi, nDPhiBins);
   const int nPtGBins = 30;
   const double* pTGBins = logspace (50, 300, nPtGBins);
   const int nPtJBins = 25;
@@ -172,7 +187,6 @@ int main (int argc, char** argv) {
   h2_g_jet_pt_cov->Sumw2 ();
   
 
-
   for (int iEvent = 0; iEvent < nEvents; iEvent++) {
     inTree->GetEntry (iEvent);
 
@@ -204,13 +218,8 @@ int main (int argc, char** argv) {
     }
 
 
-    vector <fastjet::PseudoJet> particles;
-
-
     // first loop over the particles in the recorded event
     for (int iPart = 0; iPart < part_n; iPart++) {
-      particles.push_back (fastjet::PseudoJet (part_pt[iPart], part_eta[iPart], part_phi[iPart], part_e[iPart]));
-
       if (fabs (part_eta[iPart]) > 2.5)
         continue;
 
@@ -253,19 +262,10 @@ int main (int argc, char** argv) {
     } // end loop over iPart
 
 
-    // now run jet clustering
-    fastjet::ClusterSequence clusterSeqAkt4 (particles, antiKt4);
-    vector<fastjet::PseudoJet> sortedAkt4Jets = fastjet::sorted_by_pt (clusterSeqAkt4.inclusive_jets ());
-
-
     // now loop over jets
     if (photon_pt >= 50 && photon_pt < 70) {
-      // first run jet clustering
-      fastjet::ClusterSequence clusterSeqAkt4 (particles, antiKt4);
-      vector<fastjet::PseudoJet> sortedAkt4Jets = fastjet::sorted_by_pt (clusterSeqAkt4.inclusive_jets ());
-
-      for (fastjet::PseudoJet jet : sortedAkt4Jets) {
-        const float jpt = jet.perp ();
+      for (int iJ = 0; iJ < akt4_jet_n; iJ++) {
+        const float jpt = akt4_jet_pt[iJ];
 
         if (jpt < 10)
           continue;
@@ -303,6 +303,11 @@ int main (int argc, char** argv) {
       for (short iY = 0; iY < nXhGBins; iY++)
         h2_trk_g_xhg_bkg_cov->SetBinContent (iX+1, iY+1, h2_trk_g_xhg_bkg_cov->GetBinContent (iX+1, iY+1) + (trk_xhg_counts_bkg[iX])*(trk_xhg_counts_bkg[iY]));
     }
+    for (short iX = 0; iX < nPthBins; iX++) {
+      h_trk_g_dphi_pth_gt4_yield->SetBinContent (iX+1, h_trk_g_dphi_pth_gt4_yield->GetBinContent (iX+1) + trk_dphi_counts[iX]);
+      for (short iY = 0; iY < nPthBins; iY++)
+        h2_trk_g_dphi_pth_gt4_cov->SetBinContent (iX+1, iY+1, h2_trk_g_dphi_pth_gt4_cov->GetBinContent (iX+1, iY+1) + (trk_dphi_counts[iX])*(trk_dphi_counts[iY]));
+    }
 
     for (short iX = 0; iX < nPtJBins; iX++) {
       h_g_jet_pt_yield->SetBinContent (iX+1, h_g_jet_pt_yield->GetBinContent (iX+1) + jet_counts[iX]);
@@ -320,7 +325,6 @@ int main (int argc, char** argv) {
     }
     for (int i = 0; i < nDPhiBins; i++) {
       trk_dphi_counts[i] = 0;
-      trk_dphi_counts_bkg[i] = 0;
     }
     for (int i = 0; i < nPtJBins; i++) {
       jet_counts[i] = 0;
@@ -373,6 +377,19 @@ int main (int argc, char** argv) {
     h2_trk_g_xhg_bkg_cov->Scale (1./(nEvents * (nEvents - 1)));
 
 
+    h_trk_g_dphi_pth_gt4_yield->Scale (1./(nEvents), "width");
+
+    h2_trk_g_dphi_pth_gt4_cov->Scale (1., "width");
+
+    h2 = h2_trk_g_dphi_pth_gt4_cov;
+    h = h_trk_g_dphi_pth_gt4_yield;
+    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
+      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
+
+    h2_trk_g_dphi_pth_gt4_cov->Scale (1./(nEvents * (nEvents - 1)));
+
+
     h_g_pt_yield->Scale (1./nEvents, "width");
 
 
@@ -398,6 +415,8 @@ int main (int argc, char** argv) {
   h_trk_g_xhg_bkg_yield->Write ();
   h2_trk_g_pth_bkg_cov->Write ();
   h2_trk_g_xhg_bkg_cov->Write ();
+  h_trk_g_dphi_pth_gt4_yield->Write ();
+  h2_trk_g_dphi_pth_gt4_cov->Write ();
   h_g_pt_yield->Write ();
   h_g_pids->Write ();
   h_g_jet_pt_yield->Write ();

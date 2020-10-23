@@ -7,6 +7,8 @@
 
 #include <sstream>
 
+#include "fastjet/ClusterSequence.hh"
+
 #include "Pythia8/Pythia.h"
 
 #include <Utilities.h>
@@ -39,8 +41,8 @@ int main (int argc, char** argv) {
 
   pythia.readString (Form ("Beams:eCM = %g", sqrts));
 
-  pythia.readString("23:onMode = off");
-  pythia.readString("23:onIfAny = 11 13");
+  pythia.readString ("23:onMode = off");
+  pythia.readString ("23:onIfAny = 11 13");
 
   pythia.readString ("WeakZ0:gmZmode = 2"); // set to Z's
   pythia.readString ("WeakSingleBoson:ffbar2gmZ = on");       // code 221
@@ -55,6 +57,10 @@ int main (int argc, char** argv) {
   pythia.readString ("PhaseSpace:mHatMin = 60");
 
   pythia.init ();
+
+
+  fastjet::JetDefinition antiKt4 (fastjet::antikt_algorithm, 0.4);
+
 
   TFile* outFile = new TFile (outFileName.c_str (), "RECREATE");
 
@@ -71,6 +77,13 @@ int main (int argc, char** argv) {
   float b_z_eta = 0;
   float b_z_phi = 0;
   float b_z_m = 0;
+
+  int b_akt4_jet_n = 0;
+  float b_akt4_jet_pt[1000];
+  float b_akt4_jet_eta[1000];
+  float b_akt4_jet_phi[1000];
+  float b_akt4_jet_e[1000];
+
   int b_part_n = 0;
   float b_part_pt[10000];
   float b_part_eta[10000];
@@ -92,6 +105,12 @@ int main (int argc, char** argv) {
   outTree->Branch ("z_eta", &b_z_eta, "z_eta/F");
   outTree->Branch ("z_phi", &b_z_phi, "z_phi/F");
   outTree->Branch ("z_m",   &b_z_m,   "z_m/F");
+
+  outTree->Branch ("akt4_jet_n",    &b_akt4_jet_n,    "akt4_jet_n/I");
+  outTree->Branch ("akt4_jet_pt",   &b_akt4_jet_pt,   "akt4_jet_pt/F");
+  outTree->Branch ("akt4_jet_eta",  &b_akt4_jet_eta,  "akt4_jet_eta/F");
+  outTree->Branch ("akt4_jet_phi",  &b_akt4_jet_phi,  "akt4_jet_phi/F");
+  outTree->Branch ("akt4_jet_e",    &b_akt4_jet_e,    "akt4_jet_e/F");
 
   outTree->Branch ("part_n",    &b_part_n,    "part_n/I");
   outTree->Branch ("part_pt",   &b_part_pt,   "part_pt[part_n]/F");
@@ -146,17 +165,36 @@ int main (int argc, char** argv) {
       continue;
     }
 
+
+    vector <fastjet::PseudoJet> particles;
     b_part_n = 0;
     for (int i = 0; i < pythia.event.size (); i++) {
-
       if (pythia.event[i].isFinal () && pythia.event[i].isHadron ()) {
-        b_part_pt[b_part_n]   = pythia.event[i].pT ();
-        b_part_eta[b_part_n]  = pythia.event[i].eta ();
-        b_part_phi[b_part_n]  = pythia.event[i].phi ();
-        b_part_e[b_part_n]    = pythia.event[i].e ();
-        b_part_n++;
+        particles.push_back (fastjet::PseudoJet (pythia.event[i].pT (), pythia.event[i].eta (), pythia.event[i].phi (), pythia.event[i].e ()));
+        if (pythia.event[i].isCharged ()) {
+          b_part_pt[b_part_n]   = pythia.event[i].pT ();
+          b_part_eta[b_part_n]  = pythia.event[i].eta ();
+          b_part_phi[b_part_n]  = pythia.event[i].phi ();
+          b_part_e[b_part_n]    = pythia.event[i].e ();
+          b_part_n++;
+        }
       }
     }
+
+
+    // now run jet clustering
+    fastjet::ClusterSequence clusterSeqAkt4 (particles, antiKt4);
+    vector<fastjet::PseudoJet> sortedAkt4Jets = fastjet::sorted_by_pt (clusterSeqAkt4.inclusive_jets ());
+
+    b_akt4_jet_n = 0;
+    for (fastjet::PseudoJet jet : sortedAkt4Jets) {
+      b_akt4_jet_pt[b_akt4_jet_n] = jet.perp ();
+      b_akt4_jet_eta[b_akt4_jet_n] = jet.pseudorapidity ();
+      b_akt4_jet_phi[b_akt4_jet_n] = jet.phi ();
+      b_akt4_jet_e[b_akt4_jet_n] = jet.e ();
+      b_akt4_jet_n++;
+    }
+
 
     b_code = pythia.info.code ();
     b_id1 = pythia.info.id1pdf ();

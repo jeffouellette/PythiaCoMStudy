@@ -23,18 +23,18 @@ Queue 1
 
 
 
-#Executable = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/bin/photon_gen
-#
-#Arguments = 3 5020 40 20000 rootFiles/photon_gen_sqrts5020GeV.root
-#Log = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/logs/photon_gen_sqrts5020GeV.log
-#Output = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/outputs/photon_gen_sqrts5020GeV.out
-#Error = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/errors/photon_gen_sqrts5020GeV.err
-#Queue 1
-#
-#Executable = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/bin/photon_gen
-#Arguments = 4 8160 40 20000 rootFiles/photon_gen_sqrts8160GeV.root
-#Log = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/logs/photon_gen_sqrts8160GeV.log
-#Output = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/outputs/photon_gen_sqrts8160GeV.out
-#Error = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/errors/photon_gen_sqrts8160GeV.err
-#Queue 1
+Executable = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/bin/photon_gen
+
+Arguments = 3 5020 40 20000 rootFiles/photon_gen_sqrts5020GeV.root
+Log = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/logs/photon_gen_sqrts5020GeV.log
+Output = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/outputs/photon_gen_sqrts5020GeV.out
+Error = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/errors/photon_gen_sqrts5020GeV.err
+Queue 1
+
+Executable = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/bin/photon_gen
+Arguments = 4 8160 40 20000 rootFiles/photon_gen_sqrts8160GeV.root
+Log = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/logs/photon_gen_sqrts8160GeV.log
+Output = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/outputs/photon_gen_sqrts8160GeV.out
+Error = /atlasgpfs01/usatlas/workarea/jeff/PythiaCoMStudy/errors/photon_gen_sqrts8160GeV.err
+Queue 1
 
