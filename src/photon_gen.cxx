@@ -22,7 +22,7 @@ using namespace PythiaCoMStudy;
 int main (int argc, char** argv) {
 
   if (argc < 6) {
-    std::cout << " usage: photon_gen SEED SQRTS MINPTHAT NEVT FILENAMEOUT" << std::endl;
+    std::cout << " usage: photon_gen SEED SQRTS MINPTHAT NEVT FILENAMEOUT ISR(on:off) FSR(on:off)" << std::endl;
     return 0;
   }
 
@@ -32,6 +32,8 @@ int main (int argc, char** argv) {
   const float ptHatMin = atof (argv[3]);
   const int nEvents = atoi (argv[4]);
   const string outFileName = string (argv[5]);
+  const string isr = (argc >= 7 ? string (argv[6]) : "on");
+  const string fsr = (argc >= 8 ? string (argv[7]) : "on");
 
   // Generator. Process selection. LHC initialization. Histogram.
   Pythia pythia;
@@ -43,6 +45,9 @@ int main (int argc, char** argv) {
   pythia.readString("PromptPhoton:all  = on");
 
   pythia.readString (Form ("PhaseSpace:pTHatMin = %g", ptHatMin));
+
+  pythia.readString (Form ("PartonLevel:ISR = %s", isr.c_str ()));
+  pythia.readString (Form ("PartonLevel:FSR = %s", fsr.c_str ()));
 
   pythia.init ();
 
@@ -71,6 +76,12 @@ int main (int argc, char** argv) {
   float b_akt4_jet_phi[1000];
   float b_akt4_jet_e[1000];
 
+  int b_akt4_ch_jet_n = 0;
+  float b_akt4_ch_jet_pt[1000];
+  float b_akt4_ch_jet_eta[1000];
+  float b_akt4_ch_jet_phi[1000];
+  float b_akt4_ch_jet_e[1000];
+
   int b_part_n = 0;
   float b_part_pt[10000];
   float b_part_eta[10000];
@@ -97,6 +108,12 @@ int main (int argc, char** argv) {
   outTree->Branch ("akt4_jet_eta",  &b_akt4_jet_eta,  "akt4_jet_eta[akt4_jet_n]/F");
   outTree->Branch ("akt4_jet_phi",  &b_akt4_jet_phi,  "akt4_jet_phi[akt4_jet_n]/F");
   outTree->Branch ("akt4_jet_e",    &b_akt4_jet_e,    "akt4_jet_e[akt4_jet_n]/F");
+
+  outTree->Branch ("akt4_ch_jet_n",    &b_akt4_ch_jet_n,    "akt4_ch_jet_n/I");
+  outTree->Branch ("akt4_ch_jet_pt",   &b_akt4_ch_jet_pt,   "akt4_ch_jet_pt[akt4_ch_jet_n]/F");
+  outTree->Branch ("akt4_ch_jet_eta",  &b_akt4_ch_jet_eta,  "akt4_ch_jet_eta[akt4_ch_jet_n]/F");
+  outTree->Branch ("akt4_ch_jet_phi",  &b_akt4_ch_jet_phi,  "akt4_ch_jet_phi[akt4_ch_jet_n]/F");
+  outTree->Branch ("akt4_ch_jet_e",    &b_akt4_ch_jet_e,    "akt4_ch_jet_e[akt4_ch_jet_n]/F");
 
   outTree->Branch ("part_n",    &b_part_n,    "part_n/I");
   outTree->Branch ("part_pt",   &b_part_pt,   "part_pt[part_n]/F");
@@ -126,7 +143,7 @@ int main (int argc, char** argv) {
       b_photon_phi = pythia.event[i].phi ();
     }
 
-    if (b_photon_pt < 50) {
+    if (b_photon_pt < 60) {
       iEvent--;
       continue;
     }
@@ -149,11 +166,13 @@ int main (int argc, char** argv) {
 
 
     vector <fastjet::PseudoJet> particles;
+    vector <fastjet::PseudoJet> chargedParticles;
     b_part_n = 0;
     for (int i = 0; i < pythia.event.size (); i++) {
       if (pythia.event[i].isFinal () && pythia.event[i].isHadron ()) {
         particles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].py (), pythia.event[i].e ()));
         if (pythia.event[i].isCharged ()) {
+          chargedParticles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].py (), pythia.event[i].e ()));
           b_part_pt[b_part_n]   = pythia.event[i].pT ();
           b_part_eta[b_part_n]  = pythia.event[i].eta ();
           b_part_phi[b_part_n]  = pythia.event[i].phi ();
@@ -165,8 +184,11 @@ int main (int argc, char** argv) {
 
 
     // now run jet clustering
-    fastjet::ClusterSequence clusterSeqAkt4 (particles, antiKt4);
-    vector<fastjet::PseudoJet> sortedAkt4Jets = fastjet::sorted_by_pt (clusterSeqAkt4.inclusive_jets ());
+    fastjet::ClusterSequence clusterSeqAkt4Jets (particles, antiKt4);
+    vector<fastjet::PseudoJet> sortedAkt4Jets = fastjet::sorted_by_pt (clusterSeqAkt4Jets.inclusive_jets ());
+
+    fastjet::ClusterSequence clusterSeqAkt4ChJets (chargedParticles, antiKt4);
+    vector<fastjet::PseudoJet> sortedAkt4ChJets = fastjet::sorted_by_pt (clusterSeqAkt4ChJets.inclusive_jets ());
 
     b_akt4_jet_n = 0;
     for (fastjet::PseudoJet jet : sortedAkt4Jets) {
@@ -175,6 +197,15 @@ int main (int argc, char** argv) {
       b_akt4_jet_phi[b_akt4_jet_n] = jet.phi ();
       b_akt4_jet_e[b_akt4_jet_n] = jet.e ();
       b_akt4_jet_n++;
+    }
+
+    b_akt4_ch_jet_n = 0;
+    for (fastjet::PseudoJet jet : sortedAkt4ChJets) {
+      b_akt4_ch_jet_pt[b_akt4_ch_jet_n] = jet.perp ();
+      b_akt4_ch_jet_eta[b_akt4_ch_jet_n] = jet.pseudorapidity ();
+      b_akt4_ch_jet_phi[b_akt4_ch_jet_n] = jet.phi ();
+      b_akt4_ch_jet_e[b_akt4_ch_jet_n] = jet.e ();
+      b_akt4_ch_jet_n++;
     }
 
 
