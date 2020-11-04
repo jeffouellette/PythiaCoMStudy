@@ -43,6 +43,50 @@ float GetZPIDBin (int code) {
 
 
 
+void SetVariances (TH1D* h, TH2D* h2) {
+  const int nb = h->GetNbinsX ();
+  assert (nb == h2->GetNbinsX () && nb == h2->GetNbinsY ());
+
+  for (int iX = 1; iX <= nb; iX++) {
+    if (h2->GetBinContent (iX, iX) < 0) {
+      cout << "Assertion failed for " << h->GetName () << endl;
+      cout << "  --> at iX =       " << iX << endl;
+      cout << "  --> bin content = " << h->GetBinContent (iX) << endl;
+      cout << "  --> variance =    " << h2->GetBinContent (iX, iX) << endl;
+      assert (h2->GetBinContent (iX, iX) >= 0);
+    }
+    h->SetBinError (iX, sqrt (h2->GetBinContent (iX, iX)));
+  }
+}
+
+
+
+void ScaleHist (TH1D* h, const double sf, const bool doWidth) {
+  const int nb = h->GetNbinsX ();
+  for (int iX = 1; iX <= nb; iX++) {
+    h->SetBinContent (iX, h->GetBinContent (iX) * sf / (doWidth ? h->GetBinWidth (iX) : 1.));
+    h->SetBinError (iX, h->GetBinError (iX) * sf / (doWidth ? h->GetBinWidth (iX) : 1.));
+  }
+  return;
+}
+
+
+
+void ScaleHist (TH2D* h, const double sf, const bool doWidth) {
+  const int nbx = h->GetNbinsX ();
+  const int nby = h->GetNbinsY ();
+  for (int iX = 1; iX <= nbx; iX++) {
+    for (int iY = 1; iY <= nby; iY++) {
+      h->SetBinContent (iX, iY, h->GetBinContent (iX, iY) * sf / (doWidth ? h->GetXaxis ()->GetBinWidth (iX) * h->GetYaxis ()->GetBinWidth (iY) : 1.));
+      h->SetBinError (iX, iY, h->GetBinError (iX, iY) * sf / (doWidth ? h->GetXaxis ()->GetBinWidth (iX) * h->GetYaxis ()->GetBinWidth (iY) : 1.));
+    }
+  }
+  return;
+}
+
+
+
+
 int main (int argc, char** argv) {
 
   if (argc < 4) {
@@ -115,19 +159,19 @@ int main (int argc, char** argv) {
   inTree->SetBranchAddress ("part_e",     &part_e);
 
 
-  TH1D* h_trk_z_pth_yield;
-  TH1D* h_trk_z_xhz_yield;
-  TH2D* h2_trk_z_pth_cov;
-  TH2D* h2_trk_z_xhz_cov;
-  TH1D* h_trk_z_pth_bkg_yield;
-  TH1D* h_trk_z_xhz_bkg_yield;
-  TH2D* h2_trk_z_pth_bkg_cov;
-  TH2D* h2_trk_z_xhz_bkg_cov;
+  TH1D* h_z_trk_pth_yield;
+  TH1D* h_z_trk_xhz_yield;
+  TH2D* h2_z_trk_pth_cov;
+  TH2D* h2_z_trk_xhz_cov;
+  TH1D* h_z_trk_pth_bkg_yield;
+  TH1D* h_z_trk_xhz_bkg_yield;
+  TH2D* h2_z_trk_pth_bkg_cov;
+  TH2D* h2_z_trk_xhz_bkg_cov;
 
-  TH1D* h_trk_z_dphi_pth_gt4_yield;
-  TH2D* h2_trk_z_dphi_pth_gt4_cov;
-  TH1D* h_trk_z_dphi_pth_lt4_yield;
-  TH2D* h2_trk_z_dphi_pth_lt4_cov;
+  TH1D* h_z_trk_dphi_pth_gt4_yield;
+  TH2D* h2_z_trk_dphi_pth_gt4_cov;
+  TH1D* h_z_trk_dphi_pth_lt4_yield;
+  TH2D* h2_z_trk_dphi_pth_lt4_cov;
 
   TH1D* h_z_pt_yield;
 
@@ -164,20 +208,20 @@ int main (int argc, char** argv) {
 
   TFile* outFile = new TFile (outFileName.c_str (), "recreate");
 
-  h_trk_z_pth_yield = new TH1D (Form ("h_trk_z_pth_yield_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins);
-  h_trk_z_xhz_yield = new TH1D (Form ("h_trk_z_xhz_yield_%s", name.c_str ()), ";#it{x}_{hZ}", nXhZBins, xhzBins);
-  h2_trk_z_pth_cov = new TH2D (Form ("h2_trk_z_pth_cov_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV];#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins, nPthBins, pthBins);
-  h2_trk_z_xhz_cov = new TH2D (Form ("h2_trk_z_xhz_cov_%s", name.c_str ()), ";#it{x}_{hZ};#it{x}_{hZ}", nXhZBins, xhzBins, nXhZBins, xhzBins);
+  h_z_trk_pth_yield = new TH1D (Form ("h_z_trk_pth_yield_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins);
+  h_z_trk_xhz_yield = new TH1D (Form ("h_z_trk_xhz_yield_%s", name.c_str ()), ";#it{x}_{hZ}", nXhZBins, xhzBins);
+  h2_z_trk_pth_cov = new TH2D (Form ("h2_z_trk_pth_cov_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV];#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins, nPthBins, pthBins);
+  h2_z_trk_xhz_cov = new TH2D (Form ("h2_z_trk_xhz_cov_%s", name.c_str ()), ";#it{x}_{hZ};#it{x}_{hZ}", nXhZBins, xhzBins, nXhZBins, xhzBins);
 
-  h_trk_z_pth_bkg_yield = new TH1D (Form ("h_trk_z_pth_bkg_yield_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins);
-  h_trk_z_xhz_bkg_yield = new TH1D (Form ("h_trk_z_xhz_bkg_yield_%s", name.c_str ()), ";#it{x}_{hZ}", nXhZBins, xhzBins);
-  h2_trk_z_pth_bkg_cov = new TH2D (Form ("h2_trk_z_pth_bkg_cov_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV];#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins, nPthBins, pthBins);
-  h2_trk_z_xhz_bkg_cov = new TH2D (Form ("h2_trk_z_xhz_bkg_cov_%s", name.c_str ()), ";#it{x}_{hZ};#it{x}_{hZ}", nXhZBins, xhzBins, nXhZBins, xhzBins);
+  h_z_trk_pth_bkg_yield = new TH1D (Form ("h_z_trk_pth_bkg_yield_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins);
+  h_z_trk_xhz_bkg_yield = new TH1D (Form ("h_z_trk_xhz_bkg_yield_%s", name.c_str ()), ";#it{x}_{hZ}", nXhZBins, xhzBins);
+  h2_z_trk_pth_bkg_cov = new TH2D (Form ("h2_z_trk_pth_bkg_cov_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV];#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins, nPthBins, pthBins);
+  h2_z_trk_xhz_bkg_cov = new TH2D (Form ("h2_z_trk_xhz_bkg_cov_%s", name.c_str ()), ";#it{x}_{hZ};#it{x}_{hZ}", nXhZBins, xhzBins, nXhZBins, xhzBins);
 
-  h_trk_z_dphi_pth_gt4_yield = new TH1D (Form ("h_trk_z_dphi_pth_gt4_yield_%s", name.c_str ()), ";#Delta#phi_{ch,#it{Z}}", nDPhiBins, dPhiBins);
-  h2_trk_z_dphi_pth_gt4_cov = new TH2D (Form ("h2_trk_z_dphi_pth_gt4_cov_%s", name.c_str ()), ";#Delta#phi_{ch,#it{Z}}", nDPhiBins, dPhiBins, nDPhiBins, dPhiBins);
-  h_trk_z_dphi_pth_lt4_yield = new TH1D (Form ("h_trk_z_dphi_pth_lt4_yield_%s", name.c_str ()), ";#Delta#phi_{ch,#it{Z}}", nDPhiBins, dPhiBins);
-  h2_trk_z_dphi_pth_lt4_cov = new TH2D (Form ("h2_trk_z_dphi_pth_lt4_cov_%s", name.c_str ()), ";#Delta#phi_{ch,#it{Z}}", nDPhiBins, dPhiBins, nDPhiBins, dPhiBins);
+  h_z_trk_dphi_pth_gt4_yield = new TH1D (Form ("h_z_trk_dphi_pth_gt4_yield_%s", name.c_str ()), ";#Delta#phi_{ch,#it{Z}}", nDPhiBins, dPhiBins);
+  h2_z_trk_dphi_pth_gt4_cov = new TH2D (Form ("h2_z_trk_dphi_pth_gt4_cov_%s", name.c_str ()), ";#Delta#phi_{ch,#it{Z}}", nDPhiBins, dPhiBins, nDPhiBins, dPhiBins);
+  h_z_trk_dphi_pth_lt4_yield = new TH1D (Form ("h_z_trk_dphi_pth_lt4_yield_%s", name.c_str ()), ";#Delta#phi_{ch,#it{Z}}", nDPhiBins, dPhiBins);
+  h2_z_trk_dphi_pth_lt4_cov = new TH2D (Form ("h2_z_trk_dphi_pth_lt4_cov_%s", name.c_str ()), ";#Delta#phi_{ch,#it{Z}}", nDPhiBins, dPhiBins, nDPhiBins, dPhiBins);
 
   h_z_pt_yield = new TH1D (Form ("h_z_pt_yield_%s", name.c_str ()), ";#it{p}_{T}^{Z} [GeV]", nPtZBins, pTZBins);
   h_z_pt_yield->Sumw2 ();
@@ -315,34 +359,34 @@ int main (int argc, char** argv) {
     h_z_pt_yield->Fill (z_pt);
 
     for (short iX = 0; iX < nPthBins; iX++) {
-      h_trk_z_pth_yield->SetBinContent (iX+1, h_trk_z_pth_yield->GetBinContent (iX+1) + trk_pth_counts[iX]);
+      h_z_trk_pth_yield->SetBinContent (iX+1, h_z_trk_pth_yield->GetBinContent (iX+1) + trk_pth_counts[iX]);
       for (short iY = 0; iY < nPthBins; iY++)
-        h2_trk_z_pth_cov->SetBinContent (iX+1, iY+1, h2_trk_z_pth_cov->GetBinContent (iX+1, iY+1) + (trk_pth_counts[iX])*(trk_pth_counts[iY]));
+        h2_z_trk_pth_cov->SetBinContent (iX+1, iY+1, h2_z_trk_pth_cov->GetBinContent (iX+1, iY+1) + (trk_pth_counts[iX])*(trk_pth_counts[iY]));
     }
     for (short iX = 0; iX < nXhZBins; iX++) {
-      h_trk_z_xhz_yield->SetBinContent (iX+1, h_trk_z_xhz_yield->GetBinContent (iX+1) + trk_xhz_counts[iX]);
+      h_z_trk_xhz_yield->SetBinContent (iX+1, h_z_trk_xhz_yield->GetBinContent (iX+1) + trk_xhz_counts[iX]);
       for (short iY = 0; iY < nXhZBins; iY++)
-        h2_trk_z_xhz_cov->SetBinContent (iX+1, iY+1, h2_trk_z_xhz_cov->GetBinContent (iX+1, iY+1) + (trk_xhz_counts[iX])*(trk_xhz_counts[iY]));
+        h2_z_trk_xhz_cov->SetBinContent (iX+1, iY+1, h2_z_trk_xhz_cov->GetBinContent (iX+1, iY+1) + (trk_xhz_counts[iX])*(trk_xhz_counts[iY]));
     }
     for (short iX = 0; iX < nPthBins; iX++) {
-      h_trk_z_pth_bkg_yield->SetBinContent (iX+1, h_trk_z_pth_bkg_yield->GetBinContent (iX+1) + trk_pth_counts_bkg[iX]);
+      h_z_trk_pth_bkg_yield->SetBinContent (iX+1, h_z_trk_pth_bkg_yield->GetBinContent (iX+1) + trk_pth_counts_bkg[iX]);
       for (short iY = 0; iY < nPthBins; iY++)
-        h2_trk_z_pth_bkg_cov->SetBinContent (iX+1, iY+1, h2_trk_z_pth_bkg_cov->GetBinContent (iX+1, iY+1) + (trk_pth_counts_bkg[iX])*(trk_pth_counts_bkg[iY]));
+        h2_z_trk_pth_bkg_cov->SetBinContent (iX+1, iY+1, h2_z_trk_pth_bkg_cov->GetBinContent (iX+1, iY+1) + (trk_pth_counts_bkg[iX])*(trk_pth_counts_bkg[iY]));
     }
     for (short iX = 0; iX < nXhZBins; iX++) {
-      h_trk_z_xhz_bkg_yield->SetBinContent (iX+1, h_trk_z_xhz_bkg_yield->GetBinContent (iX+1) + trk_xhz_counts_bkg[iX]);
+      h_z_trk_xhz_bkg_yield->SetBinContent (iX+1, h_z_trk_xhz_bkg_yield->GetBinContent (iX+1) + trk_xhz_counts_bkg[iX]);
       for (short iY = 0; iY < nXhZBins; iY++)
-        h2_trk_z_xhz_bkg_cov->SetBinContent (iX+1, iY+1, h2_trk_z_xhz_bkg_cov->GetBinContent (iX+1, iY+1) + (trk_xhz_counts_bkg[iX])*(trk_xhz_counts_bkg[iY]));
+        h2_z_trk_xhz_bkg_cov->SetBinContent (iX+1, iY+1, h2_z_trk_xhz_bkg_cov->GetBinContent (iX+1, iY+1) + (trk_xhz_counts_bkg[iX])*(trk_xhz_counts_bkg[iY]));
     }
     for (short iX = 0; iX < nDPhiBins; iX++) {
-      h_trk_z_dphi_pth_gt4_yield->SetBinContent (iX+1, h_trk_z_dphi_pth_gt4_yield->GetBinContent (iX+1) + trk_dphi_pth_gt4_counts[iX]);
+      h_z_trk_dphi_pth_gt4_yield->SetBinContent (iX+1, h_z_trk_dphi_pth_gt4_yield->GetBinContent (iX+1) + trk_dphi_pth_gt4_counts[iX]);
       for (short iY = 0; iY < nDPhiBins; iY++)
-        h2_trk_z_dphi_pth_gt4_cov->SetBinContent (iX+1, iY+1, h2_trk_z_dphi_pth_gt4_cov->GetBinContent (iX+1, iY+1) + (trk_dphi_pth_gt4_counts[iX])*(trk_dphi_pth_gt4_counts[iY]));
+        h2_z_trk_dphi_pth_gt4_cov->SetBinContent (iX+1, iY+1, h2_z_trk_dphi_pth_gt4_cov->GetBinContent (iX+1, iY+1) + (trk_dphi_pth_gt4_counts[iX])*(trk_dphi_pth_gt4_counts[iY]));
     }
     for (short iX = 0; iX < nDPhiBins; iX++) {
-      h_trk_z_dphi_pth_lt4_yield->SetBinContent (iX+1, h_trk_z_dphi_pth_lt4_yield->GetBinContent (iX+1) + trk_dphi_pth_lt4_counts[iX]);
+      h_z_trk_dphi_pth_lt4_yield->SetBinContent (iX+1, h_z_trk_dphi_pth_lt4_yield->GetBinContent (iX+1) + trk_dphi_pth_lt4_counts[iX]);
       for (short iY = 0; iY < nDPhiBins; iY++)
-        h2_trk_z_dphi_pth_lt4_cov->SetBinContent (iX+1, iY+1, h2_trk_z_dphi_pth_lt4_cov->GetBinContent (iX+1, iY+1) + (trk_dphi_pth_lt4_counts[iX])*(trk_dphi_pth_lt4_counts[iY]));
+        h2_z_trk_dphi_pth_lt4_cov->SetBinContent (iX+1, iY+1, h2_z_trk_dphi_pth_lt4_cov->GetBinContent (iX+1, iY+1) + (trk_dphi_pth_lt4_counts[iX])*(trk_dphi_pth_lt4_counts[iY]));
     }
 
     for (short iX = 0; iX < nPtJBins; iX++) {
@@ -385,129 +429,120 @@ int main (int argc, char** argv) {
   inFile->Close ();
   SaferDelete (&inFile);
 
+
+  const double fnEvents = (double) nEvents;
+  const double fnJetEvents = (double) nJetEvents;
+
   {
-    h_trk_z_pth_yield->Scale (1./(nEvents * pi/4.), "width");
-    h_trk_z_xhz_yield->Scale (1./(nEvents * pi/4.), "width");
+    TH2D* h2 = nullptr;
+    TH1D* h = nullptr;
 
-    h2_trk_z_pth_cov->Scale (1./(pow (pi/4., 2)), "width");
-    h2_trk_z_xhz_cov->Scale (1./(pow (pi/4., 2)), "width");
-
-    TH2D* h2 = h2_trk_z_pth_cov;
-    TH1D* h = h_trk_z_pth_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-    h2 = h2_trk_z_xhz_cov;
-    h = h_trk_z_xhz_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-
-    h2_trk_z_pth_cov->Scale (1./(nEvents * (nEvents - 1)));
-    h2_trk_z_xhz_cov->Scale (1./(nEvents * (nEvents - 1)));
+    h2 = h2_z_trk_pth_cov;
+    h = h_z_trk_pth_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)fnEvents));
+    ScaleHist (h, pow (fnEvents * pi/4., -1), true);
+    ScaleHist (h2, pow (fnEvents * (fnEvents-1) * pow(pi/4., 2), -1), true);
+    SetVariances (h, h2);
 
 
-    h_trk_z_pth_bkg_yield->Scale (1./(nEvents * pi/8.), "width");
-    h_trk_z_xhz_bkg_yield->Scale (1./(nEvents * pi/8.), "width");
-
-    h2_trk_z_pth_bkg_cov->Scale (1./(pow (pi/8., 2)), "width");
-    h2_trk_z_xhz_bkg_cov->Scale (1./(pow (pi/8., 2)), "width");
-
-    h2 = h2_trk_z_pth_bkg_cov;
-    h = h_trk_z_pth_bkg_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-    h2 = h2_trk_z_xhz_bkg_cov;
-    h = h_trk_z_xhz_bkg_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-
-    h2_trk_z_pth_bkg_cov->Scale (1./(nEvents * (nEvents - 1)));
-    h2_trk_z_xhz_bkg_cov->Scale (1./(nEvents * (nEvents - 1)));
+    h2 = h2_z_trk_xhz_cov;
+    h = h_z_trk_xhz_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)fnEvents));
+    ScaleHist (h, pow (fnEvents * pi/4., -1), true);
+    ScaleHist (h2, pow (fnEvents * (fnEvents-1) * pow(pi/4., 2), -1), true);
+    SetVariances (h, h2);
 
 
-    h_trk_z_dphi_pth_gt4_yield->Scale (1./(nEvents), "width");
+    h2 = h2_z_trk_pth_bkg_cov;
+    h = h_z_trk_pth_bkg_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)fnEvents));
+    ScaleHist (h, pow (fnEvents * pi/8., -1), true);
+    ScaleHist (h2, pow (fnEvents * (fnEvents-1) * pow(pi/8., 2), -1), true);
+    SetVariances (h, h2);
 
-    h2_trk_z_dphi_pth_gt4_cov->Scale (1., "width");
-
-    h2 = h2_trk_z_dphi_pth_gt4_cov;
-    h = h_trk_z_dphi_pth_gt4_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-
-    h2_trk_z_dphi_pth_gt4_cov->Scale (1./(nEvents * (nEvents - 1)));
-
-
-    h_trk_z_dphi_pth_lt4_yield->Scale (1./(nEvents), "width");
-
-    h2_trk_z_dphi_pth_lt4_cov->Scale (1., "width");
-
-    h2 = h2_trk_z_dphi_pth_lt4_cov;
-    h = h_trk_z_dphi_pth_lt4_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-
-    h2_trk_z_dphi_pth_lt4_cov->Scale (1./(nEvents * (nEvents - 1)));
+    h2 = h2_z_trk_xhz_bkg_cov;
+    h = h_z_trk_xhz_bkg_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)fnEvents));
+    ScaleHist (h, pow (fnEvents * pi/8., -1), true);
+    ScaleHist (h2, pow (fnEvents * (fnEvents-1) * pow(pi/8., 2), -1), true);
+    SetVariances (h, h2);
 
 
-    h_z_pt_yield->Scale (1./nEvents, "width");
+    h2 = h2_z_trk_dphi_pth_gt4_cov;
+    h = h_z_trk_dphi_pth_gt4_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)fnEvents));
+    ScaleHist (h, pow (fnEvents, -1), true);
+    ScaleHist (h2, pow (fnEvents * (fnEvents-1), -1), true);
+    SetVariances (h, h2);
 
 
-    h_z_jet_pt_yield->Scale (1./nJetEvents, "width");
-    h2_z_jet_pt_cov->Scale (1., "width");
+    h2 = h2_z_trk_dphi_pth_lt4_cov;
+    h = h_z_trk_dphi_pth_lt4_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)fnEvents));
+    ScaleHist (h, pow (fnEvents, -1), true);
+    ScaleHist (h2, pow (fnEvents * (fnEvents-1), -1), true);
+    SetVariances (h, h2);
+
+
+    h_z_pt_yield->Scale (1./fnEvents, "width");
+
 
     h2 = h2_z_jet_pt_cov;
     h = h_z_jet_pt_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nJetEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)fnJetEvents));
+    ScaleHist (h, pow (fnJetEvents, -1), true);
+    ScaleHist (h2, pow (fnJetEvents * (fnJetEvents-1), -1), true);
+    SetVariances (h, h2);
 
-    h2_z_jet_pt_cov->Scale (1./(nJetEvents * (nJetEvents - 1)));
-
-
-    h_z_jet_pt_dphi_gt7p8_yield->Scale (1./nJetEvents, "width");
-    h2_z_jet_pt_dphi_gt7p8_cov->Scale (1., "width");
 
     h2 = h2_z_jet_pt_dphi_gt7p8_cov;
     h = h_z_jet_pt_dphi_gt7p8_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nJetEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)fnJetEvents));
+    ScaleHist (h, pow (fnJetEvents, -1), true);
+    ScaleHist (h2, pow (fnJetEvents * (fnJetEvents-1), -1), true);
+    SetVariances (h, h2);
 
-    h2_z_jet_pt_dphi_gt7p8_cov->Scale (1./(nJetEvents * (nJetEvents - 1)));
-
-
-    h_z_jet_dphi_yield->Scale (1./(nJetEvents), "width");
-
-    h2_z_jet_dphi_cov->Scale (1., "width");
 
     h2 = h2_z_jet_dphi_cov;
     h = h_z_jet_dphi_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nJetEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-
-    h2_z_jet_dphi_cov->Scale (1./(nJetEvents * (nJetEvents - 1)));
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)fnJetEvents));
+    ScaleHist (h, pow (fnJetEvents, -1), true);
+    ScaleHist (h2, pow (fnJetEvents * (fnJetEvents-1), -1), true);
+    SetVariances (h, h2);
   }
 
 
   // now save histograms to a rootfile
-  h_trk_z_pth_yield->Write ();
-  h_trk_z_xhz_yield->Write ();
-  h2_trk_z_pth_cov->Write ();
-  h2_trk_z_xhz_cov->Write ();
-  h_trk_z_pth_bkg_yield->Write ();
-  h_trk_z_xhz_bkg_yield->Write ();
-  h2_trk_z_pth_bkg_cov->Write ();
-  h2_trk_z_xhz_bkg_cov->Write ();
-  h_trk_z_dphi_pth_gt4_yield->Write ();
-  h2_trk_z_dphi_pth_gt4_cov->Write ();
-  h_trk_z_dphi_pth_lt4_yield->Write ();
-  h2_trk_z_dphi_pth_lt4_cov->Write ();
+  h_z_trk_pth_yield->Write ();
+  h_z_trk_xhz_yield->Write ();
+  h2_z_trk_pth_cov->Write ();
+  h2_z_trk_xhz_cov->Write ();
+  h_z_trk_pth_bkg_yield->Write ();
+  h_z_trk_xhz_bkg_yield->Write ();
+  h2_z_trk_pth_bkg_cov->Write ();
+  h2_z_trk_xhz_bkg_cov->Write ();
+  h_z_trk_dphi_pth_gt4_yield->Write ();
+  h2_z_trk_dphi_pth_gt4_cov->Write ();
+  h_z_trk_dphi_pth_lt4_yield->Write ();
+  h2_z_trk_dphi_pth_lt4_cov->Write ();
   h_z_pt_yield->Write ();
   h_z_pids->Write ();
   h_z_jet_pt_yield->Write ();

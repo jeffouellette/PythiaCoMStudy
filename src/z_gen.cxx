@@ -142,19 +142,26 @@ int main (int argc, char** argv) {
     bool foundZ = false;
     b_z_pt = 0;
 
+    int l1_index = -1;
+    int l2_index = -1;
+
     for (int i = 0; i < pythia.event.size (); i++) {
 
-      if (!pythia.event[i].isFinal()) continue; // check if in final state
+      if (!pythia.event[i].isFinal())
+        continue; // check if in final state
 
-      if (abs (pythia.event[i].id ()) != 11 && abs (pythia.event[i].id ()) != 13) continue; // check if electron or muon, resp.
+      if (abs (pythia.event[i].id ()) != 11 && abs (pythia.event[i].id ()) != 13)
+        continue; // check if electron or muon, resp.
 
       l1.SetPtEtaPhiM (pythia.event[i].pT (), pythia.event[i].eta (), pythia.event[i].phi (), pythia.event[i].m ());
 
       for (int j = 0; j < i; j++) {
 
-        if (!pythia.event[j].isFinal()) continue; // check if in final state
+        if (!pythia.event[j].isFinal())
+          continue; // check if in final state
 
-        if (pythia.event[i].id () != -pythia.event[j].id ()) continue; // check if anti-particle of first particle
+        if (pythia.event[i].id () != -pythia.event[j].id ())
+          continue; // check if anti-particle of first particle
 
         l2.SetPtEtaPhiM (pythia.event[j].pT (), pythia.event[j].eta (), pythia.event[j].phi (), pythia.event[j].m ());
 
@@ -162,12 +169,15 @@ int main (int argc, char** argv) {
         z = l1+l2;
 
         b_z_m   = z.M ();
-        if (b_z_m < 66 || 111 < b_z_m) continue; // loose invariant mass cut to make sure these are from Z decays
+        if (b_z_m < 66 || 111 < b_z_m)
+          continue; // loose invariant mass cut to make sure these are from Z decays
 
         b_z_pt  = z.Pt ();
         b_z_eta = z.Eta ();
         b_z_phi = z.Phi ();
         foundZ = true;
+        l1_index = i;
+        l2_index = j;
         break;
       }
     }
@@ -177,22 +187,31 @@ int main (int argc, char** argv) {
       continue;
     }
 
+    assert (l1_index >= 0 && l2_index >= 0);
+
 
     vector <fastjet::PseudoJet> particles;
     vector <fastjet::PseudoJet> chargedParticles;
     b_part_n = 0;
     for (int i = 0; i < pythia.event.size (); i++) {
-      if (pythia.event[i].isFinal () && pythia.event[i].isHadron ()) {
-        particles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].py (), pythia.event[i].e ()));
-        if (pythia.event[i].isCharged ()) {
-          chargedParticles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].py (), pythia.event[i].e ()));
-          b_part_pt[b_part_n]   = pythia.event[i].pT ();
-          b_part_eta[b_part_n]  = pythia.event[i].eta ();
-          b_part_phi[b_part_n]  = pythia.event[i].phi ();
-          b_part_e[b_part_n]    = pythia.event[i].e ();
-          b_part_n++;
-        }
-      }
+      if (i == l1_index || i == l2_index || !(pythia.event[i].isFinal ()) || abs (pythia.event[i].id ()) == 12 || abs (pythia.event[i].id ()) == 14 || abs (pythia.event[i].id ()) == 16)
+        continue; // check that particle is final state and is not a decay lepton or neutrino
+
+      particles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].pz (), pythia.event[i].e ()));
+
+      if (!(pythia.event[i].isCharged ()))
+        continue; // check that particle is charged (is not neutral)
+
+      chargedParticles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].pz (), pythia.event[i].e ()));
+
+      if (!(pythia.event[i].isHadron ()))
+        continue; // check that particle is a hadron
+
+      b_part_pt[b_part_n]   = pythia.event[i].pT ();
+      b_part_eta[b_part_n]  = pythia.event[i].eta ();
+      b_part_phi[b_part_n]  = pythia.event[i].phi ();
+      b_part_e[b_part_n]    = pythia.event[i].e ();
+      b_part_n++;
     }
 
 

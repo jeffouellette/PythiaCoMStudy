@@ -40,28 +40,62 @@ float GetPhotonPIDBin (int code) {
 
 
 
+void SetVariances (TH1D* h, TH2D* h2) {
+  const int nb = h->GetNbinsX ();
+  assert (nb == h2->GetNbinsX () && nb == h2->GetNbinsY ());
+
+  for (int iX = 1; iX <= nb; iX++) {
+    assert (h2->GetBinContent (iX, iX) >= 0);
+    h->SetBinError (iX, sqrt (h2->GetBinContent (iX, iX)));
+  }
+}
+
+
+
+void ScaleHist (TH1D* h, const double sf, const bool doWidth) {
+  const int nb = h->GetNbinsX ();
+  for (int iX = 1; iX <= nb; iX++) {
+    h->SetBinContent (iX, h->GetBinContent (iX) * sf / (doWidth ? h->GetBinWidth (iX) : 1.));
+    h->SetBinError (iX, h->GetBinError (iX) * sf / (doWidth ? h->GetBinWidth (iX) : 1.));
+  }
+  return;
+}
+
+
+
+void ScaleHist (TH2D* h, const double sf, const bool doWidth) {
+  const int nbx = h->GetNbinsX ();
+  const int nby = h->GetNbinsY ();
+  for (int iX = 1; iX <= nbx; iX++) {
+    for (int iY = 1; iY <= nby; iY++) {
+      h->SetBinContent (iX, iY, h->GetBinContent (iX, iY) * sf / (doWidth ? h->GetXaxis ()->GetBinWidth (iX) * h->GetYaxis ()->GetBinWidth (iY) : 1.));
+      h->SetBinError (iX, iY, h->GetBinError (iX, iY) * sf / (doWidth ? h->GetXaxis ()->GetBinWidth (iX) * h->GetYaxis ()->GetBinWidth (iY) : 1.));
+    }
+  }
+  return;
+}
+
+
+
+
 int main (int argc, char** argv) {
 
   if (argc < 4) {
-    std::cout << " usage: photon_analyze NAME INFILENAME OUTFILENAME" << std::endl;
+    std::cout << " usage: photon_analyze NAME INFILENAME OUTFILENAME (opt:WGTFILENAME)" << std::endl;
     return 0;
   }
 
   const string name = string (argv[1]);
   const string inFileName = string (argv[2]);
   const string outFileName = string (argv[3]);
+  const string wgtsFileName = (argc >= 5 ? string (argv[4]) : "");
 
-  TFile* inFile;
-  TTree* inTree;
+  TFile* inFile = nullptr;
+  TTree* inTree = nullptr;
+  TFile* wgtsFile = nullptr;
+  TH1D* wgtsHist = nullptr;
 
   int code = 0;
-  //int id1 = 0;
-  //int id2 = 0;
-  //float x1pdf = 0;
-  //float x2pdf = 0;
-  //float Q = 0;
-  //bool isValence1 = false;
-  //bool isValence2 = false;
 
   float photon_pt = 0;
   float photon_eta = 0;
@@ -88,8 +122,17 @@ int main (int argc, char** argv) {
   inFile = new TFile (inFileName.c_str (), "read");
   inTree = (TTree*) inFile->Get ("tree");
 
+  wgtsFile = (wgtsFileName != "" ? new TFile (wgtsFileName.c_str (), "read") : nullptr);
+  wgtsHist = (wgtsFile ? (TH1D*) wgtsFile->Get ("h_g_pt_wgts") : nullptr);
+
   const int nEvents = inTree->GetEntries ();
+  double sumWgtsEvents = 0, sumWgtsSqEvents = 0;
+  int nTrkEvents = 0;
+  double sumWgtsTrkEvents = 0, sumWgtsSqTrkEvents = 0;
   int nJetEvents = 0;
+  double sumWgtsJetEvents = 0, sumWgtsSqJetEvents = 0;
+  int nJetTrkEvents = 0;
+  double sumWgtsJetTrkEvents = 0, sumWgtsSqJetTrkEvents = 0;
 
   inTree->SetBranchAddress ("code",       &code);
   //inTree->SetBranchAddress ("id1",        &id1);
@@ -126,19 +169,19 @@ int main (int argc, char** argv) {
   fastjet::JetDefinition antiKt4 (fastjet::antikt_algorithm, 0.4);
 
 
-  TH1D* h_trk_g_pth_yield;
-  TH1D* h_trk_g_xhg_yield;
-  TH2D* h2_trk_g_pth_cov;
-  TH2D* h2_trk_g_xhg_cov;
-  TH1D* h_trk_g_pth_bkg_yield;
-  TH1D* h_trk_g_xhg_bkg_yield;
-  TH2D* h2_trk_g_pth_bkg_cov;
-  TH2D* h2_trk_g_xhg_bkg_cov;
+  TH1D* h_g_trk_pth_yield;
+  TH1D* h_g_trk_xhg_yield;
+  TH2D* h2_g_trk_pth_cov;
+  TH2D* h2_g_trk_xhg_cov;
+  TH1D* h_g_trk_pth_bkg_yield;
+  TH1D* h_g_trk_xhg_bkg_yield;
+  TH2D* h2_g_trk_pth_bkg_cov;
+  TH2D* h2_g_trk_xhg_bkg_cov;
 
-  TH1D* h_trk_g_dphi_pth_gt4_yield;
-  TH2D* h2_trk_g_dphi_pth_gt4_cov;
-  TH1D* h_trk_g_dphi_pth_lt4_yield;
-  TH2D* h2_trk_g_dphi_pth_lt4_cov;
+  TH1D* h_g_trk_dphi_pth_gt4_yield;
+  TH2D* h2_g_trk_dphi_pth_gt4_cov;
+  TH1D* h_g_trk_dphi_pth_lt4_yield;
+  TH2D* h2_g_trk_dphi_pth_lt4_cov;
 
   TH1D* h_g_pt_yield;
 
@@ -153,6 +196,11 @@ int main (int argc, char** argv) {
   TH1D* h_g_chjet_dphi_yield;
   TH2D* h2_g_chjet_dphi_cov;
 
+  TH1D* h_g_jet_trk_pth_yield;
+  TH2D* h2_g_jet_trk_pth_cov;
+  TH1D* h_g_jet_trk_xhj_yield;
+  TH2D* h2_g_jet_trk_xhj_cov;
+
   TH1D* h_g_jet_yield;
   TH1D* h_g_chjet_yield;
 
@@ -160,47 +208,44 @@ int main (int argc, char** argv) {
   const short nPthBins = sizeof (pthBins) / sizeof (pthBins[0]) - 1;
   const float xhgBins[13] = {1./120., 1./60., 1./30., 1./15., 1./10., 1./8., 1./6., 1./4., 1./3., 1./2., 1./1.5, 1., 2.};
   const short nXhGBins = sizeof (xhgBins) / sizeof (xhgBins[0]) - 1;
+  const float xhjBins[19] = {1./240, 1./180., 1./150., 1./120., 1./90., 1./75., 1./60., 1./45., 1./30., 1./20., 1./15., 1./10., 1./8., 1./6., 1./4., 1./3., 1./2., 1./1.5, 1.};
+  const short nXhJBins = sizeof (xhjBins) / sizeof (xhjBins[0]) - 1;
   const short nDPhiBins = 24;
   const double* dPhiBins = linspace (0, pi, nDPhiBins);
   const int nPtGBins = 60;
-  const double* pTGBins = logspace (50, 300, nPtGBins);
-  const int nPtJBins = 25;
-  const double* pTJBins = logspace (8, 100, nPtJBins);
+  const double* pTGBins = logspace (60, 300, nPtGBins);
+  const int nPtJBins = 30;
+  const double* pTJBins = logspace (8, 140, nPtJBins);
 
-  float trk_pth_counts[nPthBins] = {{}};
-  float trk_pth_counts_bkg[nPthBins] = {{}};
-  float trk_xhg_counts[nXhGBins] = {{}};
-  float trk_xhg_counts_bkg[nXhGBins] = {{}};
-  float trk_dphi_pth_gt4_counts[nDPhiBins] = {};
-  float trk_dphi_pth_lt4_counts[nDPhiBins] = {};
-  float jet_ptj_counts[nPtJBins] = {};
-  float jet_ptj_dphi_gt7p8_counts[nPtJBins] = {};
-  float jet_dphi_counts[nDPhiBins] = {};
-  float chjet_dphi_counts[nDPhiBins] = {};
+  int trk_pth_counts[nPthBins] = {};
+  int trk_pth_counts_bkg[nPthBins] = {};
+  int jet_trk_pth_counts[nPthBins] = {};
+  int trk_xhg_counts[nXhGBins] = {};
+  int trk_xhg_counts_bkg[nXhGBins] = {};
+  int jet_trk_xhj_counts[nXhJBins] = {};
+  int trk_dphi_pth_gt4_counts[nDPhiBins] = {};
+  int trk_dphi_pth_lt4_counts[nDPhiBins] = {};
+  int jet_ptj_counts[nPtJBins] = {};
+  int jet_ptj_dphi_gt7p8_counts[nPtJBins] = {};
+  int jet_dphi_counts[nDPhiBins] = {};
+  int chjet_dphi_counts[nDPhiBins] = {};
 
   TFile* outFile = new TFile (outFileName.c_str (), "recreate");
 
-  h_trk_g_pth_yield = new TH1D (Form ("h_trk_g_pth_yield_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins);
-  h_trk_g_xhg_yield = new TH1D (Form ("h_trk_g_xhg_yield_%s", name.c_str ()), ";#it{x}_{h#gamma}", nXhGBins, xhgBins);
-  h2_trk_g_pth_cov = new TH2D (Form ("h2_trk_g_pth_cov_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV];#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins, nPthBins, pthBins);
-  h2_trk_g_xhg_cov = new TH2D (Form ("h2_trk_g_xhg_cov_%s", name.c_str ()), ";#it{x}_{h#gamma};#it{x}_{h#gamma}", nXhGBins, xhgBins, nXhGBins, xhgBins);
+  h_g_trk_pth_yield = new TH1D (Form ("h_g_trk_pth_yield_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins);
+  h_g_trk_xhg_yield = new TH1D (Form ("h_g_trk_xhg_yield_%s", name.c_str ()), ";#it{x}_{h#gamma}", nXhGBins, xhgBins);
+  h2_g_trk_pth_cov = new TH2D (Form ("h2_g_trk_pth_cov_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV];#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins, nPthBins, pthBins);
+  h2_g_trk_xhg_cov = new TH2D (Form ("h2_g_trk_xhg_cov_%s", name.c_str ()), ";#it{x}_{h#gamma};#it{x}_{h#gamma}", nXhGBins, xhgBins, nXhGBins, xhgBins);
 
-  h_trk_g_pth_bkg_yield = new TH1D (Form ("h_trk_g_pth_bkg_yield_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins);
-  h_trk_g_xhg_bkg_yield = new TH1D (Form ("h_trk_g_xhg_bkg_yield_%s", name.c_str ()), ";#it{x}_{h#gamma}", nXhGBins, xhgBins);
-  h2_trk_g_pth_bkg_cov = new TH2D (Form ("h2_trk_g_pth_bkg_cov_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV];#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins, nPthBins, pthBins);
-  h2_trk_g_xhg_bkg_cov = new TH2D (Form ("h2_trk_g_xhg_bkg_cov_%s", name.c_str ()), ";#it{x}_{h#gamma};#it{x}_{h#gamma}", nXhGBins, xhgBins, nXhGBins, xhgBins);
+  h_g_trk_pth_bkg_yield = new TH1D (Form ("h_g_trk_pth_bkg_yield_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins);
+  h_g_trk_xhg_bkg_yield = new TH1D (Form ("h_g_trk_xhg_bkg_yield_%s", name.c_str ()), ";#it{x}_{h#gamma}", nXhGBins, xhgBins);
+  h2_g_trk_pth_bkg_cov = new TH2D (Form ("h2_g_trk_pth_bkg_cov_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV];#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins, nPthBins, pthBins);
+  h2_g_trk_xhg_bkg_cov = new TH2D (Form ("h2_g_trk_xhg_bkg_cov_%s", name.c_str ()), ";#it{x}_{h#gamma};#it{x}_{h#gamma}", nXhGBins, xhgBins, nXhGBins, xhgBins);
 
-  h_trk_g_dphi_pth_gt4_yield = new TH1D (Form ("h_trk_g_dphi_pth_gt4_yield_%s", name.c_str ()), ";#Delta#phi_{ch,#gamma}", nDPhiBins, dPhiBins);
-  h2_trk_g_dphi_pth_gt4_cov = new TH2D (Form ("h2_trk_g_dphi_pth_gt4_cov_%s", name.c_str ()), ";#Delta#phi_{ch,#gamma}", nDPhiBins, dPhiBins, nDPhiBins, dPhiBins);
-  h_trk_g_dphi_pth_lt4_yield = new TH1D (Form ("h_trk_g_dphi_pth_lt4_yield_%s", name.c_str ()), ";#Delta#phi_{ch,#gamma}", nDPhiBins, dPhiBins);
-  h2_trk_g_dphi_pth_lt4_cov = new TH2D (Form ("h2_trk_g_dphi_pth_lt4_cov_%s", name.c_str ()), ";#Delta#phi_{ch,#gamma}", nDPhiBins, dPhiBins, nDPhiBins, dPhiBins);
-
-  h_g_pt_yield = new TH1D (Form ("h_g_pt_yield_%s", name.c_str ()), ";#it{p}_{T}^{#gamma} [GeV]", nPtGBins, pTGBins);
-  h_g_pt_yield->Sumw2 ();
-
-  h_g_pids = new TH1D (Form ("h_g_pids_%s", name.c_str ()), "", 2, 0, 2);
-  h_g_pids->GetXaxis ()->SetBinLabel (1, "q+g#rightarrowq+#gamma");
-  h_g_pids->GetXaxis ()->SetBinLabel (2, "q+#bar{q}#rightarrowg+#gamma");
+  h_g_trk_dphi_pth_gt4_yield = new TH1D (Form ("h_g_trk_dphi_pth_gt4_yield_%s", name.c_str ()), ";#Delta#phi_{ch,#gamma}", nDPhiBins, dPhiBins);
+  h2_g_trk_dphi_pth_gt4_cov = new TH2D (Form ("h2_g_trk_dphi_pth_gt4_cov_%s", name.c_str ()), ";#Delta#phi_{ch,#gamma}", nDPhiBins, dPhiBins, nDPhiBins, dPhiBins);
+  h_g_trk_dphi_pth_lt4_yield = new TH1D (Form ("h_g_trk_dphi_pth_lt4_yield_%s", name.c_str ()), ";#Delta#phi_{ch,#gamma}", nDPhiBins, dPhiBins);
+  h2_g_trk_dphi_pth_lt4_cov = new TH2D (Form ("h2_g_trk_dphi_pth_lt4_cov_%s", name.c_str ()), ";#Delta#phi_{ch,#gamma}", nDPhiBins, dPhiBins, nDPhiBins, dPhiBins);
 
   h_g_jet_pt_yield = new TH1D (Form ("h_g_jet_pt_yield_%s", name.c_str ()), ";#it{p}_{T}^{jet} [GeV]", nPtJBins, pTJBins);
   h2_g_jet_pt_cov = new TH2D (Form ("h2_g_jet_pt_cov_%s", name.c_str ()), ";#it{p}_{T}^{jet} [GeV];#it{p}_{T}^{jet} [GeV]", nPtJBins, pTJBins, nPtJBins, pTJBins);
@@ -212,16 +257,39 @@ int main (int argc, char** argv) {
   h_g_chjet_dphi_yield = new TH1D (Form ("h_g_chjet_dphi_yield_%s", name.c_str ()), ";#Delta#phi_{j#gamma}", nDPhiBins, dPhiBins);
   h2_g_chjet_dphi_cov = new TH2D (Form ("h2_g_chjet_dphi_cov_%s", name.c_str ()), ";#Delta#phi_{j#gamma}", nDPhiBins, dPhiBins, nDPhiBins, dPhiBins);
 
-  h_g_jet_yield = new TH1D (Form ("h_g_jet_yield_%s", name.c_str ()), "", 15, -0.5, 14.5);
+  h_g_jet_yield = new TH1D (Form ("h_g_jet_yield_%s", name.c_str ()), "", 9, -0.5, 8.5);
   h_g_jet_yield->Sumw2 ();
-  h_g_chjet_yield = new TH1D (Form ("h_g_chjet_yield_%s", name.c_str ()), "", 15, -0.5, 14.5);
+  h_g_chjet_yield = new TH1D (Form ("h_g_chjet_yield_%s", name.c_str ()), "", 9, -0.5, 8.5);
   h_g_chjet_yield->Sumw2 ();
+
+  h_g_jet_trk_pth_yield = new TH1D (Form ("h_g_jet_trk_pth_yield_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins);
+  h2_g_jet_trk_pth_cov = new TH2D (Form ("h2_g_jet_trk_pth_yield_%s", name.c_str ()), ";#it{p}_{T}^{ch} [GeV]", nPthBins, pthBins, nPthBins, pthBins);
+  h_g_jet_trk_xhj_yield = new TH1D (Form ("h_g_jet_trk_xhj_yield_%s", name.c_str ()), ";#it{x}_{hj}", nXhJBins, xhjBins);
+  h2_g_jet_trk_xhj_cov = new TH2D (Form ("h2_g_jet_trk_xhj_yield_%s", name.c_str ()), ";#it{x}_{hj}", nXhJBins, xhjBins, nXhJBins, xhjBins);
+
+  h_g_pt_yield = new TH1D (Form ("h_g_pt_yield_%s", name.c_str ()), ";#it{p}_{T}^{#gamma} [GeV]", nPtGBins, pTGBins);
+  h_g_pt_yield->Sumw2 ();
+
+  h_g_pids = new TH1D (Form ("h_g_pids_%s", name.c_str ()), "", 2, 0, 2);
+  h_g_pids->GetXaxis ()->SetBinLabel (1, "q+g#rightarrowq+#gamma");
+  h_g_pids->GetXaxis ()->SetBinLabel (2, "q+#bar{q}#rightarrowg+#gamma");
   
 
   for (int iEvent = 0; iEvent < nEvents; iEvent++) {
     inTree->GetEntry (iEvent);
 
+    const double evtWgt = (wgtsHist ? wgtsHist->GetBinContent (wgtsHist->FindBin (photon_pt)) : 1.);
+    sumWgtsEvents += evtWgt;
+    sumWgtsSqEvents += evtWgt*evtWgt;
+
+    h_g_pt_yield->Fill (photon_pt, evtWgt);
     h_g_pids->Fill (GetPhotonPIDBin (code));
+
+    //if (code != 201)
+    //  continue; // only accept Compton scattering photons
+
+    if (!(photon_pt >= 60 && photon_pt < 80))
+      continue; // only take photons between 60 & 80 GeV
 
     float sumptcw = 0;
     float sumptccw = 0;
@@ -249,14 +317,96 @@ int main (int argc, char** argv) {
     }
 
 
-    // first loop over the particles in the recorded event
+    // loop over jets
+    //if (photon_pt >= 60 && photon_pt < 80) {
+    // all-particle jets
+    int jetCount = 0;
+    for (int iJ = 0; iJ < akt4_jet_n; iJ++) {
+      const float jpt = akt4_jet_pt[iJ];
+      const float jeta = akt4_jet_eta[iJ];
+      const float dphi = DeltaPhi (akt4_jet_phi[iJ], photon_phi);
+
+      if (fabs (jeta) > 2.5)
+        continue;
+
+      for (short i = 0; i < nPtJBins; i++) {
+        if (pTJBins[i] <= jpt && jpt < pTJBins[i+1]) {
+          if (dphi > 7.*pi/8.)
+            jet_ptj_dphi_gt7p8_counts[i]++;
+          jet_ptj_counts[i]++;
+          break;
+        }
+      }
+
+      if (jpt < 20)
+        continue;
+
+      for (short i = 0; i < nDPhiBins; i++) {
+        if (dPhiBins[i] <= dphi && dphi < dPhiBins[i+1]) {
+          jet_dphi_counts[i]++;
+          break;
+        }
+      }
+
+      jetCount++;
+    }
+    h_g_jet_yield->Fill (jetCount);
+
+    // charged particle jets
+    int chjetCount = 0;
+    for (int iJ = 0; iJ < akt4_ch_jet_n; iJ++) {
+      const float jpt = akt4_ch_jet_pt[iJ];
+      const float jeta = akt4_ch_jet_eta[iJ];
+      const float dphi = DeltaPhi (akt4_ch_jet_phi[iJ], photon_phi);
+
+      if (jpt < 8)
+        continue;
+      if (fabs (jeta) > 2.5)
+        continue;
+
+      chjetCount++;
+
+      for (short i = 0; i < nDPhiBins; i++) {
+        if (dPhiBins[i] <= dphi && dphi < dPhiBins[i+1]) {
+          chjet_dphi_counts[i]++;
+          break;
+        }
+      }
+    }
+    h_g_chjet_yield->Fill (chjetCount);
+
+    nJetEvents += 1;
+    sumWgtsJetEvents += evtWgt;
+    sumWgtsSqJetEvents += evtWgt*evtWgt;
+
+
+    // find the number of jets in FF acceptance
+    for (int iJ = 0; iJ < akt4_jet_n; iJ++) {
+      const float jpt = akt4_jet_pt[iJ];
+      const float jeta = akt4_jet_eta[iJ];
+      const float dphijg = DeltaPhi (akt4_jet_phi[iJ], photon_phi);
+
+      //if (fabs (jeta) > 2.5)
+      //  continue;
+      if (jpt < 20)
+        continue;
+      if (dphijg < 3.*pi/4.)
+        continue;
+
+      nJetTrkEvents += 1;
+      sumWgtsJetTrkEvents += evtWgt;
+      sumWgtsSqJetTrkEvents += evtWgt*evtWgt;
+    }
+
+
+    // now loop over the particles in the recorded event
     for (int iPart = 0; iPart < part_n; iPart++) {
       if (fabs (part_eta[iPart]) > 2.5)
         continue;
 
-      const double trkpt = part_pt[iPart];
-      const double xhg = trkpt / photon_pt;
-      const double dphi = DeltaPhi (part_phi[iPart], photon_phi);
+      const float trkpt = part_pt[iPart];
+      const float xhg = trkpt / photon_pt;
+      const float dphi = DeltaPhi (part_phi[iPart], photon_phi);
 
       for (short i = 0; i < nDPhiBins; i++) {
         if (dPhiBins[i] <= dphi && dphi < dPhiBins[i+1]) {
@@ -268,161 +418,139 @@ int main (int argc, char** argv) {
         }
       }
 
-      if (dphi >= 3*pi/4) {
-        for (short i = 0; i < nPthBins; i++) {
-          if (pthBins[i] <= trkpt && trkpt < pthBins[i+1]) {
-            trk_pth_counts[i]++;
-            break;
-          }
-        }
-        
-        for (short i = 0; i < nXhGBins; i++) {
-          if (xhgBins[i] <= xhg && xhg < xhgBins[i+1]) {
-            trk_xhg_counts[i]++;
-            break;
-          }
+
+      bool isInJet = false;
+      float xhj = -1;
+      for (int iJ = 0; iJ < akt4_jet_n; iJ++) {
+        const float jpt = akt4_jet_pt[iJ];
+        const float jeta = akt4_jet_eta[iJ];
+        const float dphijg = DeltaPhi (akt4_jet_phi[iJ], photon_phi);
+
+        //if (fabs (jeta) > 2.5)
+        //  continue;
+        if (jpt < 20)
+          continue;
+        if (dphijg < 3.*pi/4.)
+          continue;
+
+        if (DeltaR (part_eta[iPart], jeta, part_phi[iPart], akt4_jet_phi[iJ]) < 0.4) {
+          isInJet = true;
+          xhj = part_pt[iPart] / jpt;
+          break;
         }
       }
-      else if (DeltaPhi (part_phi[iPart], photon_phi_transmin) < pi/8.) {
-        for (short i = 0; i < nPthBins; i++) {
-          if (pthBins[i] <= trkpt && trkpt < pthBins[i+1]) {
+
+
+      for (short i = 0; i < nPthBins; i++) {
+        if (pthBins[i] <= trkpt && trkpt < pthBins[i+1]) {
+          if (dphi >= 3.*pi/4.)
+            trk_pth_counts[i]++;
+          else if (DeltaPhi (part_phi[iPart], photon_phi_transmin) < pi/8.)
             trk_pth_counts_bkg[i]++;
-            break;
-          }
+          if (isInJet)
+            jet_trk_pth_counts[i]++;
+          break;
         }
+      }
         
-        for (short i = 0; i < nXhGBins; i++) {
-          if (xhgBins[i] <= xhg && xhg < xhgBins[i+1]) {
+      for (short i = 0; i < nXhGBins; i++) {
+        if (xhgBins[i] <= xhg && xhg < xhgBins[i+1]) {
+          if (dphi >= 3.*pi/4.)
+            trk_xhg_counts[i]++;
+          else if (DeltaPhi (part_phi[iPart], photon_phi_transmin) < pi/8.)
             trk_xhg_counts_bkg[i]++;
+          break;
+        }
+      }
+
+      if (isInJet) {
+        for (short i = 0; i < nXhJBins; i++) {
+          if (xhjBins[i] <= xhj && xhj < xhjBins[i+1]) {
+            jet_trk_xhj_counts[i]++;
             break;
           }
         }
       }
 
     } // end loop over iPart
+    nTrkEvents += 1;
+    sumWgtsTrkEvents += evtWgt;
+    sumWgtsSqTrkEvents += evtWgt*evtWgt;
 
-
-    // now loop over jets
-    if (photon_pt >= 60 && photon_pt < 90) {
-      // all-particle jets
-      int jetCount = 0;
-      for (int iJ = 0; iJ < akt4_jet_n; iJ++) {
-        const float jpt = akt4_jet_pt[iJ];
-        const float jeta = akt4_jet_eta[iJ];
-        const float dphi = DeltaPhi (akt4_jet_phi[iJ], photon_phi);
-
-        if (jpt < 8)
-          continue;
-        if (fabs (jeta) > 2.5)
-          continue;
-
-        jetCount++;
-
-        for (short i = 0; i < nDPhiBins; i++) {
-          if (dPhiBins[i] <= dphi && dphi < dPhiBins[i+1]) {
-            jet_dphi_counts[i]++;
-            break;
-          }
-        }
-
-        for (short i = 0; i < nPtJBins; i++) {
-          if (pTJBins[i] <= jpt && jpt < pTJBins[i+1]) {
-            if (dphi > 7.*pi/8.)
-              jet_ptj_dphi_gt7p8_counts[i]++;
-            jet_ptj_counts[i]++;
-            break;
-          }
-        }
-      }
-      h_g_jet_yield->Fill (jetCount);
-
-      // charged particle jets
-      int chjetCount = 0;
-      for (int iJ = 0; iJ < akt4_ch_jet_n; iJ++) {
-        const float jpt = akt4_ch_jet_pt[iJ];
-        const float jeta = akt4_ch_jet_eta[iJ];
-        const float dphi = DeltaPhi (akt4_ch_jet_phi[iJ], photon_phi);
-
-        if (jpt < 8)
-          continue;
-        if (fabs (jeta) > 2.5)
-          continue;
-
-        chjetCount++;
-
-        for (short i = 0; i < nDPhiBins; i++) {
-          if (dPhiBins[i] <= dphi && dphi < dPhiBins[i+1]) {
-            chjet_dphi_counts[i]++;
-            break;
-          }
-        }
-      }
-      h_g_chjet_yield->Fill (chjetCount);
-
-      nJetEvents++;
-    }
-
-    h_g_pt_yield->Fill (photon_pt);
 
     for (short iX = 0; iX < nPthBins; iX++) {
-      h_trk_g_pth_yield->SetBinContent (iX+1, h_trk_g_pth_yield->GetBinContent (iX+1) + trk_pth_counts[iX]);
+      h_g_trk_pth_yield->SetBinContent (iX+1, h_g_trk_pth_yield->GetBinContent (iX+1) + evtWgt * trk_pth_counts[iX]);
       for (short iY = 0; iY < nPthBins; iY++)
-        h2_trk_g_pth_cov->SetBinContent (iX+1, iY+1, h2_trk_g_pth_cov->GetBinContent (iX+1, iY+1) + (trk_pth_counts[iX])*(trk_pth_counts[iY]));
+        h2_g_trk_pth_cov->SetBinContent (iX+1, iY+1, h2_g_trk_pth_cov->GetBinContent (iX+1, iY+1) + evtWgt * (trk_pth_counts[iX])*(trk_pth_counts[iY]));
     }
     for (short iX = 0; iX < nXhGBins; iX++) {
-      h_trk_g_xhg_yield->SetBinContent (iX+1, h_trk_g_xhg_yield->GetBinContent (iX+1) + trk_xhg_counts[iX]);
+      h_g_trk_xhg_yield->SetBinContent (iX+1, h_g_trk_xhg_yield->GetBinContent (iX+1) + evtWgt * trk_xhg_counts[iX]);
       for (short iY = 0; iY < nXhGBins; iY++)
-        h2_trk_g_xhg_cov->SetBinContent (iX+1, iY+1, h2_trk_g_xhg_cov->GetBinContent (iX+1, iY+1) + (trk_xhg_counts[iX])*(trk_xhg_counts[iY]));
+        h2_g_trk_xhg_cov->SetBinContent (iX+1, iY+1, h2_g_trk_xhg_cov->GetBinContent (iX+1, iY+1) + evtWgt * (trk_xhg_counts[iX])*(trk_xhg_counts[iY]));
     }
     for (short iX = 0; iX < nPthBins; iX++) {
-      h_trk_g_pth_bkg_yield->SetBinContent (iX+1, h_trk_g_pth_bkg_yield->GetBinContent (iX+1) + trk_pth_counts_bkg[iX]);
+      h_g_trk_pth_bkg_yield->SetBinContent (iX+1, h_g_trk_pth_bkg_yield->GetBinContent (iX+1) + evtWgt * trk_pth_counts_bkg[iX]);
       for (short iY = 0; iY < nPthBins; iY++)
-        h2_trk_g_pth_bkg_cov->SetBinContent (iX+1, iY+1, h2_trk_g_pth_bkg_cov->GetBinContent (iX+1, iY+1) + (trk_pth_counts_bkg[iX])*(trk_pth_counts_bkg[iY]));
+        h2_g_trk_pth_bkg_cov->SetBinContent (iX+1, iY+1, h2_g_trk_pth_bkg_cov->GetBinContent (iX+1, iY+1) + evtWgt * (trk_pth_counts_bkg[iX])*(trk_pth_counts_bkg[iY]));
     }
     for (short iX = 0; iX < nXhGBins; iX++) {
-      h_trk_g_xhg_bkg_yield->SetBinContent (iX+1, h_trk_g_xhg_bkg_yield->GetBinContent (iX+1) + trk_xhg_counts_bkg[iX]);
+      h_g_trk_xhg_bkg_yield->SetBinContent (iX+1, h_g_trk_xhg_bkg_yield->GetBinContent (iX+1) + evtWgt * trk_xhg_counts_bkg[iX]);
       for (short iY = 0; iY < nXhGBins; iY++)
-        h2_trk_g_xhg_bkg_cov->SetBinContent (iX+1, iY+1, h2_trk_g_xhg_bkg_cov->GetBinContent (iX+1, iY+1) + (trk_xhg_counts_bkg[iX])*(trk_xhg_counts_bkg[iY]));
+        h2_g_trk_xhg_bkg_cov->SetBinContent (iX+1, iY+1, h2_g_trk_xhg_bkg_cov->GetBinContent (iX+1, iY+1) + evtWgt * (trk_xhg_counts_bkg[iX])*(trk_xhg_counts_bkg[iY]));
     }
     for (short iX = 0; iX < nDPhiBins; iX++) {
-      h_trk_g_dphi_pth_gt4_yield->SetBinContent (iX+1, h_trk_g_dphi_pth_gt4_yield->GetBinContent (iX+1) + trk_dphi_pth_gt4_counts[iX]);
+      h_g_trk_dphi_pth_gt4_yield->SetBinContent (iX+1, h_g_trk_dphi_pth_gt4_yield->GetBinContent (iX+1) + evtWgt * trk_dphi_pth_gt4_counts[iX]);
       for (short iY = 0; iY < nDPhiBins; iY++)
-        h2_trk_g_dphi_pth_gt4_cov->SetBinContent (iX+1, iY+1, h2_trk_g_dphi_pth_gt4_cov->GetBinContent (iX+1, iY+1) + (trk_dphi_pth_gt4_counts[iX])*(trk_dphi_pth_gt4_counts[iY]));
+        h2_g_trk_dphi_pth_gt4_cov->SetBinContent (iX+1, iY+1, h2_g_trk_dphi_pth_gt4_cov->GetBinContent (iX+1, iY+1) +evtWgt *  (trk_dphi_pth_gt4_counts[iX])*(trk_dphi_pth_gt4_counts[iY]));
     }
     for (short iX = 0; iX < nDPhiBins; iX++) {
-      h_trk_g_dphi_pth_lt4_yield->SetBinContent (iX+1, h_trk_g_dphi_pth_lt4_yield->GetBinContent (iX+1) + trk_dphi_pth_lt4_counts[iX]);
+      h_g_trk_dphi_pth_lt4_yield->SetBinContent (iX+1, h_g_trk_dphi_pth_lt4_yield->GetBinContent (iX+1) + evtWgt * trk_dphi_pth_lt4_counts[iX]);
       for (short iY = 0; iY < nDPhiBins; iY++)
-        h2_trk_g_dphi_pth_lt4_cov->SetBinContent (iX+1, iY+1, h2_trk_g_dphi_pth_lt4_cov->GetBinContent (iX+1, iY+1) + (trk_dphi_pth_lt4_counts[iX])*(trk_dphi_pth_lt4_counts[iY]));
+        h2_g_trk_dphi_pth_lt4_cov->SetBinContent (iX+1, iY+1, h2_g_trk_dphi_pth_lt4_cov->GetBinContent (iX+1, iY+1) + evtWgt * (trk_dphi_pth_lt4_counts[iX])*(trk_dphi_pth_lt4_counts[iY]));
+    }
+    for (short iX = 0; iX < nPthBins; iX++) {
+      h_g_jet_trk_pth_yield->SetBinContent (iX+1, h_g_jet_trk_pth_yield->GetBinContent (iX+1) + evtWgt * jet_trk_pth_counts[iX]);
+      for (short iY = 0; iY < nPthBins; iY++)
+        h2_g_jet_trk_pth_cov->SetBinContent (iX+1, iY+1, h2_g_jet_trk_pth_cov->GetBinContent (iX+1, iY+1) + evtWgt * (jet_trk_pth_counts[iX])*(jet_trk_pth_counts[iY]));
+    }
+    for (short iX = 0; iX < nXhJBins; iX++) {
+      h_g_jet_trk_xhj_yield->SetBinContent (iX+1, h_g_jet_trk_xhj_yield->GetBinContent (iX+1) + evtWgt * jet_trk_xhj_counts[iX]);
+      for (short iY = 0; iY < nXhJBins; iY++)
+        h2_g_jet_trk_xhj_cov->SetBinContent (iX+1, iY+1, h2_g_jet_trk_xhj_cov->GetBinContent (iX+1, iY+1) + evtWgt * (jet_trk_xhj_counts[iX])*(jet_trk_xhj_counts[iY]));
     }
 
     for (short iX = 0; iX < nPtJBins; iX++) {
-      h_g_jet_pt_yield->SetBinContent (iX+1, h_g_jet_pt_yield->GetBinContent (iX+1) + jet_ptj_counts[iX]);
+      h_g_jet_pt_yield->SetBinContent (iX+1, h_g_jet_pt_yield->GetBinContent (iX+1) + evtWgt * jet_ptj_counts[iX]);
       for (short iY = 0; iY < nPtJBins; iY++)
-        h2_g_jet_pt_cov->SetBinContent (iX+1, iY+1, h2_g_jet_pt_cov->GetBinContent (iX+1, iY+1) + (jet_ptj_counts[iX])*(jet_ptj_counts[iY]));
+        h2_g_jet_pt_cov->SetBinContent (iX+1, iY+1, h2_g_jet_pt_cov->GetBinContent (iX+1, iY+1) + evtWgt * (jet_ptj_counts[iX])*(jet_ptj_counts[iY]));
     }
     for (short iX = 0; iX < nPtJBins; iX++) {
-      h_g_jet_pt_dphi_gt7p8_yield->SetBinContent (iX+1, h_g_jet_pt_dphi_gt7p8_yield->GetBinContent (iX+1) + jet_ptj_dphi_gt7p8_counts[iX]);
+      h_g_jet_pt_dphi_gt7p8_yield->SetBinContent (iX+1, h_g_jet_pt_dphi_gt7p8_yield->GetBinContent (iX+1) + evtWgt * jet_ptj_dphi_gt7p8_counts[iX]);
       for (short iY = 0; iY < nPtJBins; iY++)
-        h2_g_jet_pt_dphi_gt7p8_cov->SetBinContent (iX+1, iY+1, h2_g_jet_pt_dphi_gt7p8_cov->GetBinContent (iX+1, iY+1) + (jet_ptj_dphi_gt7p8_counts[iX])*(jet_ptj_dphi_gt7p8_counts[iY]));
+        h2_g_jet_pt_dphi_gt7p8_cov->SetBinContent (iX+1, iY+1, h2_g_jet_pt_dphi_gt7p8_cov->GetBinContent (iX+1, iY+1) + evtWgt * (jet_ptj_dphi_gt7p8_counts[iX])*(jet_ptj_dphi_gt7p8_counts[iY]));
     }
     for (short iX = 0; iX < nDPhiBins; iX++) {
-      h_g_jet_dphi_yield->SetBinContent (iX+1, h_g_jet_dphi_yield->GetBinContent (iX+1) + jet_dphi_counts[iX]);
+      h_g_jet_dphi_yield->SetBinContent (iX+1, h_g_jet_dphi_yield->GetBinContent (iX+1) + evtWgt * jet_dphi_counts[iX]);
       for (short iY = 0; iY < nDPhiBins; iY++)
-        h2_g_jet_dphi_cov->SetBinContent (iX+1, iY+1, h2_g_jet_dphi_cov->GetBinContent (iX+1, iY+1) + (jet_dphi_counts[iX])*(jet_dphi_counts[iY]));
+        h2_g_jet_dphi_cov->SetBinContent (iX+1, iY+1, h2_g_jet_dphi_cov->GetBinContent (iX+1, iY+1) + evtWgt * (jet_dphi_counts[iX])*(jet_dphi_counts[iY]));
     }
     for (short iX = 0; iX < nDPhiBins; iX++) {
-      h_g_chjet_dphi_yield->SetBinContent (iX+1, h_g_chjet_dphi_yield->GetBinContent (iX+1) + chjet_dphi_counts[iX]);
+      h_g_chjet_dphi_yield->SetBinContent (iX+1, h_g_chjet_dphi_yield->GetBinContent (iX+1) + evtWgt * chjet_dphi_counts[iX]);
       for (short iY = 0; iY < nDPhiBins; iY++)
-        h2_g_chjet_dphi_cov->SetBinContent (iX+1, iY+1, h2_g_chjet_dphi_cov->GetBinContent (iX+1, iY+1) + (chjet_dphi_counts[iX])*(chjet_dphi_counts[iY]));
+        h2_g_chjet_dphi_cov->SetBinContent (iX+1, iY+1, h2_g_chjet_dphi_cov->GetBinContent (iX+1, iY+1) + evtWgt * (chjet_dphi_counts[iX])*(chjet_dphi_counts[iY]));
     }
 
     for (int i = 0; i < nPthBins; i++) {
       trk_pth_counts[i] = 0;
       trk_pth_counts_bkg[i] = 0;
+      jet_trk_pth_counts[i] = 0;
     }
     for (int i = 0; i < nXhGBins; i++) {
       trk_xhg_counts[i] = 0;
       trk_xhg_counts_bkg[i] = 0;
+    }
+    for (int i = 0; i < nXhJBins; i++) {
+      jet_trk_xhj_counts[i] = 0;
     }
     for (int i = 0; i < nDPhiBins; i++) {
       trk_dphi_pth_gt4_counts[i] = 0;
@@ -439,142 +567,160 @@ int main (int argc, char** argv) {
   inFile->Close ();
   SaferDelete (&inFile);
 
+
+  const double fnEvents = (double) nEvents;
+  const double fnTrkEvents = (double) nTrkEvents;
+  const double fnJetEvents = (double) nJetEvents;
+  const double fnJetTrkEvents = (double) nJetTrkEvents;
+
   {
-    h_trk_g_pth_yield->Scale (1./(nEvents * pi/4.), "width");
-    h_trk_g_xhg_yield->Scale (1./(nEvents * pi/4.), "width");
+    TH2D* h2 = nullptr;
+    TH1D* h = nullptr;
 
-    h2_trk_g_pth_cov->Scale (1./(pow (pi/4., 2)), "width");
-    h2_trk_g_xhg_cov->Scale (1./(pow (pi/4., 2)), "width");
-
-    TH2D* h2 = h2_trk_g_pth_cov;
-    TH1D* h = h_trk_g_pth_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-    h2 = h2_trk_g_xhg_cov;
-    h = h_trk_g_xhg_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-
-    h2_trk_g_pth_cov->Scale (1./(nEvents * (nEvents - 1)));
-    h2_trk_g_xhg_cov->Scale (1./(nEvents * (nEvents - 1)));
+    h2 = h2_g_trk_pth_cov;
+    h = h_g_trk_pth_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsTrkEvents));
+    ScaleHist (h, pow (sumWgtsTrkEvents * pi/4., -1), true);
+    ScaleHist (h2, pow (nTrkEvents * (sumWgtsTrkEvents*sumWgtsTrkEvents - sumWgtsSqTrkEvents) * pow(pi/4., 2) / sumWgtsTrkEvents, -1), true);
+    SetVariances (h, h2);
 
 
-    h_trk_g_pth_bkg_yield->Scale (1./(nEvents * pi/8.), "width");
-    h_trk_g_xhg_bkg_yield->Scale (1./(nEvents * pi/8.), "width");
-
-    h2_trk_g_pth_bkg_cov->Scale (1./(pow (pi/8., 2)), "width");
-    h2_trk_g_xhg_bkg_cov->Scale (1./(pow (pi/8., 2)), "width");
-
-    h2 = h2_trk_g_pth_bkg_cov;
-    h = h_trk_g_pth_bkg_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-    h2 = h2_trk_g_xhg_bkg_cov;
-    h = h_trk_g_xhg_bkg_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-
-    h2_trk_g_pth_bkg_cov->Scale (1./(nEvents * (nEvents - 1)));
-    h2_trk_g_xhg_bkg_cov->Scale (1./(nEvents * (nEvents - 1)));
+    h2 = h2_g_trk_xhg_cov;
+    h = h_g_trk_xhg_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsTrkEvents));
+    ScaleHist (h, pow (sumWgtsTrkEvents * pi/4., -1), true);
+    ScaleHist (h2, pow (nTrkEvents * (sumWgtsTrkEvents*sumWgtsTrkEvents - sumWgtsSqTrkEvents) * pow(pi/4., 2) / sumWgtsTrkEvents, -1), true);
+    SetVariances (h, h2);
 
 
-    h_trk_g_dphi_pth_gt4_yield->Scale (1./(nEvents), "width");
-    h2_trk_g_dphi_pth_gt4_cov->Scale (1., "width");
+    h2 = h2_g_trk_pth_bkg_cov;
+    h = h_g_trk_pth_bkg_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsTrkEvents));
+    ScaleHist (h, pow (sumWgtsTrkEvents * pi/8., -1), true);
+    ScaleHist (h2, pow (nTrkEvents * (sumWgtsTrkEvents*sumWgtsTrkEvents - sumWgtsSqTrkEvents) * pow(pi/8., 2) / sumWgtsTrkEvents, -1), true);
+    SetVariances (h, h2);
 
-    h2 = h2_trk_g_dphi_pth_gt4_cov;
-    h = h_trk_g_dphi_pth_gt4_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-
-    h2_trk_g_dphi_pth_gt4_cov->Scale (1./(nEvents * (nEvents - 1)));
-
-
-    h_trk_g_dphi_pth_lt4_yield->Scale (1./(nEvents), "width");
-    h2_trk_g_dphi_pth_lt4_cov->Scale (1., "width");
-
-    h2 = h2_trk_g_dphi_pth_lt4_cov;
-    h = h_trk_g_dphi_pth_lt4_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
-
-    h2_trk_g_dphi_pth_lt4_cov->Scale (1./(nEvents * (nEvents - 1)));
+    h2 = h2_g_trk_xhg_bkg_cov;
+    h = h_g_trk_xhg_bkg_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsTrkEvents));
+    ScaleHist (h, pow (sumWgtsTrkEvents * pi/8., -1), true);
+    ScaleHist (h2, pow (nTrkEvents * (sumWgtsTrkEvents*sumWgtsTrkEvents - sumWgtsSqTrkEvents) * pow(pi/8., 2) / sumWgtsTrkEvents, -1), true);
+    SetVariances (h, h2);
 
 
-    h_g_pt_yield->Scale (1./nEvents, "width");
+    h2 = h2_g_trk_dphi_pth_gt4_cov;
+    h = h_g_trk_dphi_pth_gt4_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsTrkEvents));
+    ScaleHist (h, pow (sumWgtsTrkEvents, -1), true);
+    ScaleHist (h2, pow (nTrkEvents * (sumWgtsTrkEvents*sumWgtsTrkEvents - sumWgtsSqTrkEvents) / sumWgtsTrkEvents, -1), true);
+    SetVariances (h, h2);
 
 
-    h_g_jet_pt_yield->Scale (1./nJetEvents, "width");
-    h2_g_jet_pt_cov->Scale (1., "width");
+    h2 = h2_g_trk_dphi_pth_lt4_cov;
+    h = h_g_trk_dphi_pth_lt4_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsTrkEvents));
+    ScaleHist (h, pow (sumWgtsTrkEvents, -1), true);
+    ScaleHist (h2, pow (nTrkEvents * (sumWgtsTrkEvents*sumWgtsTrkEvents - sumWgtsSqTrkEvents) / sumWgtsTrkEvents, -1), true);
+    SetVariances (h, h2);
+
+
+    h2 = h2_g_jet_trk_pth_cov;
+    h = h_g_jet_trk_pth_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsTrkEvents));
+    ScaleHist (h, pow (sumWgtsTrkEvents, -1), true);
+    ScaleHist (h2, pow (nTrkEvents * (sumWgtsTrkEvents*sumWgtsTrkEvents - sumWgtsSqTrkEvents) / sumWgtsTrkEvents, -1), true);
+    SetVariances (h, h2);
+
+
+    h2 = h2_g_jet_trk_xhj_cov;
+    h = h_g_jet_trk_xhj_yield;
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsJetTrkEvents));
+    ScaleHist (h, pow (sumWgtsJetTrkEvents, -1), true);
+    ScaleHist (h2, pow (nJetTrkEvents * (sumWgtsJetTrkEvents*sumWgtsJetTrkEvents - sumWgtsSqJetTrkEvents) / sumWgtsJetTrkEvents, -1), true);
+    SetVariances (h, h2);
+
+
+    h_g_pt_yield->Scale (1./sumWgtsEvents, "width");
+
 
     h2 = h2_g_jet_pt_cov;
     h = h_g_jet_pt_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nJetEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsJetEvents));
+    ScaleHist (h, pow (sumWgtsJetEvents, -1), true);
+    ScaleHist (h2, pow (sumWgtsJetEvents * (sumWgtsJetEvents-1), -1), true);
+    SetVariances (h, h2);
 
-    h2_g_jet_pt_cov->Scale (1./(nJetEvents * (nJetEvents - 1)));
-
-
-    h_g_jet_pt_dphi_gt7p8_yield->Scale (1./nJetEvents, "width");
-    h2_g_jet_pt_dphi_gt7p8_cov->Scale (1., "width");
 
     h2 = h2_g_jet_pt_dphi_gt7p8_cov;
     h = h_g_jet_pt_dphi_gt7p8_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nJetEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsJetEvents));
+    ScaleHist (h, pow (sumWgtsJetEvents, -1), true);
+    ScaleHist (h2, pow (sumWgtsJetEvents * (sumWgtsJetEvents-1), -1), true);
+    SetVariances (h, h2);
 
-    h2_g_jet_pt_dphi_gt7p8_cov->Scale (1./(nJetEvents * (nJetEvents - 1)));
-
-
-    h_g_jet_dphi_yield->Scale (1./(nJetEvents), "width");
-    h2_g_jet_dphi_cov->Scale (1., "width");
 
     h2 = h2_g_jet_dphi_cov;
     h = h_g_jet_dphi_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nJetEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsJetEvents));
+    ScaleHist (h, pow (sumWgtsJetEvents, -1), true);
+    ScaleHist (h2, pow (nJetEvents * (sumWgtsJetEvents*sumWgtsJetEvents - sumWgtsSqJetEvents) / sumWgtsJetEvents, -1), true);
+    SetVariances (h, h2);
 
-    h2_g_jet_dphi_cov->Scale (1./(nJetEvents * (nJetEvents - 1)));
-
-
-    h_g_chjet_dphi_yield->Scale (1./(nJetEvents), "width");
-    h2_g_chjet_dphi_cov->Scale (1., "width");
 
     h2 = h2_g_chjet_dphi_cov;
     h = h_g_chjet_dphi_yield;
-    for (short iX = 0; iX < h2->GetNbinsX (); iX++)
-      for (short iY = 0; iY < h2->GetNbinsY (); iY++)
-        h2->SetBinContent (iX+1, iY+1, h2->GetBinContent (iX+1, iY+1) - nJetEvents * (h->GetBinContent (iX+1))*(h->GetBinContent (iY+1)));
+    for (int iX = 1; iX <= h2->GetNbinsX (); iX++)
+      for (int iY = 1; iY <= h2->GetNbinsY (); iY++)
+        h2->SetBinContent (iX, iY, ((double)(h2->GetBinContent (iX, iY))) - ((double)(h->GetBinContent (iX)))*((double)(h->GetBinContent (iY)))/((double)sumWgtsJetEvents));
+    ScaleHist (h, pow (sumWgtsJetEvents, -1), true);
+    ScaleHist (h2, pow (nJetEvents * (sumWgtsJetEvents*sumWgtsJetEvents - sumWgtsSqJetEvents) / sumWgtsJetEvents, -1), true);
+    SetVariances (h, h2);
 
-    h2_g_chjet_dphi_cov->Scale (1./(nJetEvents * (nJetEvents - 1)));
 
-
-    //h_g_jet_yield->Scale (1./nJetEvents);
-    //h_g_chjet_yield->Scale (1./nJetEvents);
+    //h_g_jet_yield->Scale (1./sumWgtsJetEvents);
+    //h_g_chjet_yield->Scale (1./sumWgtsJetEvents);
   }
 
 
   // now save histograms to a rootfile
-  h_trk_g_pth_yield->Write ();
-  h_trk_g_xhg_yield->Write ();
-  h2_trk_g_pth_cov->Write ();
-  h2_trk_g_xhg_cov->Write ();
-  h_trk_g_pth_bkg_yield->Write ();
-  h_trk_g_xhg_bkg_yield->Write ();
-  h2_trk_g_pth_bkg_cov->Write ();
-  h2_trk_g_xhg_bkg_cov->Write ();
-  h_trk_g_dphi_pth_gt4_yield->Write ();
-  h2_trk_g_dphi_pth_gt4_cov->Write ();
-  h_trk_g_dphi_pth_lt4_yield->Write ();
-  h2_trk_g_dphi_pth_lt4_cov->Write ();
+  h_g_trk_pth_yield->Write ();
+  h_g_trk_xhg_yield->Write ();
+  h2_g_trk_pth_cov->Write ();
+  h2_g_trk_xhg_cov->Write ();
+  h_g_trk_pth_bkg_yield->Write ();
+  h_g_trk_xhg_bkg_yield->Write ();
+  h2_g_trk_pth_bkg_cov->Write ();
+  h2_g_trk_xhg_bkg_cov->Write ();
+  h_g_trk_dphi_pth_gt4_yield->Write ();
+  h2_g_trk_dphi_pth_gt4_cov->Write ();
+  h_g_trk_dphi_pth_lt4_yield->Write ();
+  h2_g_trk_dphi_pth_lt4_cov->Write ();
+  h_g_jet_trk_pth_yield->Write ();
+  h2_g_jet_trk_pth_cov->Write ();
+  h_g_jet_trk_xhj_yield->Write ();
+  h2_g_jet_trk_xhj_cov->Write ();
   h_g_pt_yield->Write ();
   h_g_pids->Write ();
   h_g_jet_pt_yield->Write ();

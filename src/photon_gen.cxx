@@ -129,6 +129,7 @@ int main (int argc, char** argv) {
       continue;
 
 
+    int photon_index = -1;
     b_photon_pt = 0;
     for (int i = 0; i < pythia.event.size (); i++) {
 
@@ -141,19 +142,21 @@ int main (int argc, char** argv) {
       b_photon_pt = pythia.event[i].pT ();
       b_photon_eta = pythia.event[i].eta ();
       b_photon_phi = pythia.event[i].phi ();
+      photon_index = i;
     }
 
     if (b_photon_pt < 60) {
       iEvent--;
-      continue;
+      continue; // enforce minimum photon pT
     }
+
+    assert (photon_index >= 0);
 
 
     float b_photon_etcone40 = 0;
     for (int i = 0; i < pythia.event.size (); i++) {
-      
-      if (!(pythia.event[i].isFinal () && pythia.event[i].isHadron ()))
-        continue;
+      if (i == photon_index || !(pythia.event[i].isFinal ()) || abs (pythia.event[i].id ()) == 12 || abs (pythia.event[i].id ()) == 14 || abs (pythia.event[i].id ()) == 16)
+        continue; // check that particle is final state and is not the photon or a neutrino
 
       if (DeltaR (b_photon_eta, pythia.event[i].eta (), b_photon_phi, pythia.event[i].phi ()) < 0.4)
         b_photon_etcone40 += pythia.event[i].eT ();
@@ -161,7 +164,7 @@ int main (int argc, char** argv) {
 
     if (b_photon_etcone40 >= 4.8 + 4.2e-3 * b_photon_pt) {
       iEvent--;
-      continue;
+      continue; // enforce photon isolation requirement
     }
 
 
@@ -169,17 +172,24 @@ int main (int argc, char** argv) {
     vector <fastjet::PseudoJet> chargedParticles;
     b_part_n = 0;
     for (int i = 0; i < pythia.event.size (); i++) {
-      if (pythia.event[i].isFinal () && pythia.event[i].isHadron ()) {
-        particles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].py (), pythia.event[i].e ()));
-        if (pythia.event[i].isCharged ()) {
-          chargedParticles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].py (), pythia.event[i].e ()));
-          b_part_pt[b_part_n]   = pythia.event[i].pT ();
-          b_part_eta[b_part_n]  = pythia.event[i].eta ();
-          b_part_phi[b_part_n]  = pythia.event[i].phi ();
-          b_part_e[b_part_n]    = pythia.event[i].e ();
-          b_part_n++;
-        }
-      }
+      if (i == photon_index || !(pythia.event[i].isFinal ()) || abs (pythia.event[i].id ()) == 12 || abs (pythia.event[i].id ()) == 14 || abs (pythia.event[i].id ()) == 16)
+        continue; // check that particle is final state and is not the photon or a neutrino
+
+      particles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].pz (), pythia.event[i].e ()));
+
+      if (!(pythia.event[i].isCharged ()))
+        continue; // check that particle is charged (is not neutral)
+
+      chargedParticles.push_back (fastjet::PseudoJet (pythia.event[i].px (), pythia.event[i].py (), pythia.event[i].pz (), pythia.event[i].e ()));
+
+      if (!(pythia.event[i].isHadron ()))
+        continue; // check that particle is a hadron
+
+      b_part_pt[b_part_n]   = pythia.event[i].pT ();
+      b_part_eta[b_part_n]  = pythia.event[i].eta ();
+      b_part_phi[b_part_n]  = pythia.event[i].phi ();
+      b_part_e[b_part_n]    = pythia.event[i].e ();
+      b_part_n++;
     }
 
 

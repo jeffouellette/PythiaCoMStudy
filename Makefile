@@ -7,7 +7,7 @@ reqdirs= bin outputs logs errors Plots
 directories:
 	mkdir -p ${reqdirs}
 
-all: directories z_gen photon_gen z_analyze photon_analyze plotter
+all: directories z_gen photon_gen z_analyze photon_analyze generate_photon_weights plotter
 
 z_gen: src/z_gen.cxx
 	$(CXX) $< $(CXXFLAGS) $(LDFLAGS) $(PYTHIA8_DIR)/lib/libpythia8.a -o bin/z_gen
@@ -20,6 +20,9 @@ z_analyze: src/z_analyze.cxx
 
 photon_analyze: src/photon_analyze.cxx
 	$(CXX) $< $(CXXFLAGS) $(LDFLAGS) -o bin/photon_analyze
+
+generate_photon_weights: src/generate_photon_weights.cxx
+	$(CXX) $< $(CXXFLAGS) $(LDFLAGS) -o bin/generate_photon_weights
 
 plotter: src/plotter.cxx
 	$(CXX) $< $(CXXFLAGS) $(LDFLAGS) -o bin/plotter
